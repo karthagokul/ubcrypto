@@ -1,2 +1,9 @@
-# ubcrypto
-Crypto Portfolio Manager for Ubuntu Touch Devices
+# UBCrypto
+
+Crypto Portfolio Tracker for Ubuntu Touch
+
+## License
+
+Copyright (C) 2025  Kartha.gokul@gmail.com
+
+Licensed under the MIT license.
