@@ -27,6 +27,26 @@ function getPortfolios() {
     return list
 }
 
+function getAllCoins() {
+    var coins = []
+    try {
+        var db = getDb()
+        db.transaction(function (tx) {
+            tx.executeSql("CREATE TABLE IF NOT EXISTS coins (id TEXT PRIMARY KEY, symbol TEXT, name TEXT, json TEXT)")
+            var rs = tx.executeSql("SELECT json FROM coins ORDER BY name COLLATE NOCASE")
+            for (var i = 0; i < rs.rows.length; ++i) {
+                var raw = rs.rows.item(i).json
+                var obj = JSON.parse(raw)
+                coins.push(obj)
+            }
+        })
+    } catch (e) {
+        console.log("DB Error in getAllCoins: " + e)
+    }
+    return coins
+}
+
+
 function addPortfolio(name) {
     try {
         var db = getDb()

@@ -1,11 +1,29 @@
 // qml/Main.qml
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import io.thp.pyotherside 1.4
 
 MainView {
     id: mainView
     applicationName: "UBCrypto"
     property int selectedTab: 0
+
+    Python {
+        id: python
+
+        Component.onCompleted: {
+            addImportPath(Qt.resolvedUrl("../src/"));
+            importModule("cli", function () {
+                python.call("cli.start_background_sync",  function (result) {
+                    console.log("Started")
+                });
+            });
+        }
+
+        onError: function (errorName, errorMessage, traceback) {
+            console.log("Python Error:", errorName, errorMessage, traceback);
+        }
+    }
 
     // Loader section (main content)
     Loader {
