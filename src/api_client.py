@@ -68,5 +68,6 @@ def get_coins(limit=1000):
                         })
             except Exception as e:
                 print(f"[Error] Page {page} failed: {e}")
+                raise ("[Error] Page {page} failed: {e}")
 
         return results[:limit]

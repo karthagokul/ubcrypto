@@ -1,46 +1,26 @@
-// qml/components/PortfolioItem.qml
+// qml/components/PortfolioCard.qml
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import "./"
 
-Item {
-    id: portfolioItem
-    width: parent.width
-    height: units.gu(8)
+CoinCard {
+    id: portfolioCard
 
-    property string coinName
-    property string coinSymbol
-    property real quantity
-    property string currentPrice
+    // Add quantity property
+    property real quantity: 0
 
-    Rectangle {
-        anchors.fill: parent
-        color: "#fafafa"
-        border.color: "#ccc"
-        radius: 8
-        anchors.margins: units.gu(0.5)
+    // Add extra row for quantity
+    Column {
+        anchors.right: parent.right
+        anchors.rightMargin: units.gu(2)
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: units.gu(0.5)
 
-        Row {
-            anchors.centerIn: parent
-            spacing: units.gu(2)
-
-            Column {
-                Text {
-                    text: coinName
-                    font.bold: true
-                }
-                Text {
-                    text: coinSymbol
-                }
-            }
-
-            Column {
-                Text {
-                    text: "Qty: " + quantity
-                }
-                Text {
-                    text: "Now: " + currentPrice
-                }
-            }
+        Text {
+            text: "Qty: " + quantity
+            font.pixelSize: units.gu(2.2)
+            horizontalAlignment: Text.AlignRight
+            color: "#333"
         }
     }
 }

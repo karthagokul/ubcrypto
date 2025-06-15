@@ -25,7 +25,7 @@ Page {
 
             Label {
                 text: "UBCrypto is a lightweight cryptocurrency tracking app designed for Ubuntu Touch."
-                width:parent.width
+                width: parent.width
                 wrapMode: Text.WordWrap
             }
 
