@@ -9,13 +9,92 @@ function getDb() {
     return Sql.LocalStorage.openDatabaseSync(DB_NAME, DB_VERSION, DB_DISPLAY_NAME, DB_SIZE)
 }
 
+
+function initializeDatabase() {
+    try {
+        var db = getDb()
+        db.transaction(function (tx) {
+            // Portfolios table
+            tx.executeSql(`
+                          CREATE TABLE IF NOT EXISTS portfolios (
+                          id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          name TEXT UNIQUE
+                          )
+                          `)
+
+            // Holdings table (Add new fields here in future)
+            tx.executeSql(`
+                          CREATE TABLE IF NOT EXISTS holdings (
+                          id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          portfolio_id INTEGER,
+                          coin_symbol TEXT,
+                          amount REAL
+                          )
+                          `)
+
+            // Add new column 'note' to holdings if not exists (example)
+            var columnsRs = tx.executeSql("PRAGMA table_info(holdings)")
+            var columnExists = false
+            for (var i = 0; i < columnsRs.rows.length; ++i) {
+                if (columnsRs.rows.item(i).name === "note") {
+                    columnExists = true
+                    break
+                }
+            }
+            if (!columnExists) {
+                tx.executeSql("ALTER TABLE holdings ADD COLUMN note TEXT")
+                console.log("[DB] Added 'note' column to holdings")
+            }
+
+            // Coins table with extended fields and JSON backup
+            tx.executeSql(`
+                CREATE TABLE IF NOT EXISTS coins (
+                    id TEXT PRIMARY KEY,
+                    symbol TEXT UNIQUE,
+                    name TEXT,
+                    image_url TEXT,
+                    current_price REAL,
+                    market_cap REAL,
+                    market_cap_rank INTEGER,
+                    total_volume REAL,
+                    high_24h REAL,
+                    low_24h REAL,
+                    price_change_24h REAL,
+                    price_change_percentage_1h REAL,
+                    price_change_percentage_24h REAL,
+                    price_change_percentage_7d REAL,
+                    price_change_percentage_30d REAL,
+                    ath REAL,
+                    atl REAL,
+                    last_updated TEXT,
+                    json TEXT
+                )
+            `)
+
+            tx.executeSql(`CREATE TABLE IF NOT EXISTS portfolio_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                portfolio_id INTEGER,
+                date TEXT, -- YYYY-MM-DD
+                total_value REAL,
+                UNIQUE(portfolio_id, date)
+            )`
+            )
+
+
+
+            console.log("[DB] Database initialized")
+        })
+    } catch (e) {
+        console.log("[DB Error] initializeDatabase: " + e)
+    }
+}
+
 // Create and fetch all portfolios
 function getPortfolios() {
     var list = []
     try {
         var db = getDb()
         db.transaction(function (tx) {
-            tx.executeSql("CREATE TABLE IF NOT EXISTS portfolios (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE)")
             var rs = tx.executeSql("SELECT * FROM portfolios ORDER BY id DESC")
             for (var i = 0; i < rs.rows.length; ++i) {
                 list.push(rs.rows.item(i))
@@ -32,13 +111,11 @@ function getAllCoins() {
     try {
         var db = getDb()
         db.transaction(function (tx) {
-            tx.executeSql("CREATE TABLE IF NOT EXISTS coins (id TEXT PRIMARY KEY, symbol TEXT, name TEXT, json TEXT)")
-            var rs = tx.executeSql("SELECT json FROM coins ORDER BY name COLLATE NOCASE")
+            var rs = tx.executeSql("SELECT * FROM coins ORDER BY market_cap DESC")
             for (var i = 0; i < rs.rows.length; ++i) {
-                var raw = rs.rows.item(i).json
-                var obj = JSON.parse(raw)
-                coins.push(obj)
+                coins.push(rs.rows.item(i))
             }
+
         })
     } catch (e) {
         console.log("DB Error in getAllCoins: " + e)
@@ -75,15 +152,6 @@ function addHolding(portfolioId, coinSymbol, amount) {
     try {
         var db = getDb()
         db.transaction(function (tx) {
-            tx.executeSql(`
-                CREATE TABLE IF NOT EXISTS holdings (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    portfolio_id INTEGER,
-                    coin_symbol TEXT,
-                    amount REAL
-                )
-            `)
-
             // If coin already exists, update the amount
             var rs = tx.executeSql("SELECT * FROM holdings WHERE portfolio_id = ? AND coin_symbol = ?", [portfolioId, coinSymbol.toUpperCase()])
             if (rs.rows.length > 0) {
@@ -98,16 +166,60 @@ function addHolding(portfolioId, coinSymbol, amount) {
         console.log("DB Error in addHolding: " + e)
     }
 }
-
 function getHoldings(portfolioId) {
     var list = []
     try {
         var db = getDb()
         db.transaction(function (tx) {
-            tx.executeSql("CREATE TABLE IF NOT EXISTS holdings (id INTEGER PRIMARY KEY AUTOINCREMENT, portfolio_id INTEGER, coin_symbol TEXT, amount REAL)")
             var rs = tx.executeSql("SELECT * FROM holdings WHERE portfolio_id = ?", [portfolioId])
             for (var i = 0; i < rs.rows.length; ++i) {
-                list.push(rs.rows.item(i))
+                var row = rs.rows.item(i)
+
+                var amount = row.amount
+                var symbol = row.coin_symbol
+                var name = symbol
+                var image_url = ""
+                var current_price = 0
+                var total_value = 0
+                var change_24h = ""
+                var change_24h_raw = 0
+
+                var change_1h = 0
+                var change_7d = 0
+                var change_30d = 0
+                var market_cap_rank = -1
+
+                // Case-insensitive match
+                var meta = tx.executeSql("SELECT * FROM coins WHERE LOWER(symbol) = LOWER(?)", [symbol])
+                if (meta.rows.length > 0) {
+                    var metaRow = meta.rows.item(0)
+                    name = metaRow.name
+                    image_url = metaRow.image_url
+                    current_price = metaRow.current_price || 0
+                    change_1h = metaRow.price_change_percentage_1h || 0
+                    change_24h_raw = metaRow.price_change_percentage_24h || 0
+                    change_7d = metaRow.price_change_percentage_7d || 0
+                    change_30d = metaRow.price_change_percentage_30d || 0
+                    market_cap_rank = metaRow.market_cap_rank || -1
+
+                    total_value = current_price * amount
+                    change_24h = (change_24h_raw >= 0 ? "+" : "") + change_24h_raw.toFixed(2) + "%"
+                }
+
+                list.push({
+                    coin_symbol: symbol,
+                    coin_name: name,
+                    image_url: image_url,
+                    amount: amount,
+                    current_price: current_price.toFixed(2),
+                    total_value: total_value.toFixed(2),
+                    change_24h: change_24h,
+                    price_change_percentage_1h: change_1h,
+                    price_change_percentage_24h: change_24h_raw,
+                    price_change_percentage_7d: change_7d,
+                    price_change_percentage_30d: change_30d,
+                    market_cap_rank: market_cap_rank
+                })
             }
         })
     } catch (e) {

@@ -5,19 +5,6 @@ import urllib.request
 
 COINGECKO_BASE = "https://api.coingecko.com/api/v3"
 
-def get_prices(symbols):
-    """
-    Get current prices for a list of symbols (e.g., ['bitcoin', 'ethereum'])
-    """
-    ids = ",".join(symbols)
-    url = f"{COINGECKO_BASE}/simple/price?ids={ids}&vs_currencies=usd&include_24hr_change=true"
-    print(f"[API] Fetching prices: {url}")
-    try:
-        with urllib.request.urlopen(url) as response:
-            return json.loads(response.read().decode())
-    except Exception as e:
-        print(f"[Error] Price fetch failed: {e}")
-        return {}
 
 def get_coin_detail(coin_id):
     """
@@ -51,7 +38,7 @@ def get_coins(limit=1000):
         results = []
 
         for page in range(1, pages + 1):
-            url = f"{COINGECKO_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={per_page}&page={page}&sparkline=false"
+            url = f"{COINGECKO_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={per_page}&page={page}&sparkline=false&price_change_percentage=1h,24h,7d,30d,90d"
             print(f"[API] Fetching page {page}: {url}")
 
             try:
@@ -64,7 +51,8 @@ def get_coins(limit=1000):
                             "symbol": coin.get("symbol").upper(),
                             "price": coin.get("current_price"),
                             "change24h": coin.get("price_change_percentage_24h"),
-                            "image": coin.get("image")
+                            "image": coin.get("image"),
+                            "json":coin,
                         })
             except Exception as e:
                 print(f"[Error] Page {page} failed: {e}")

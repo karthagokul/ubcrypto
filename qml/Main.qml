@@ -2,6 +2,7 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import io.thp.pyotherside 1.4
+import "datastore.js" as DB
 
 MainView {
     id: mainView
@@ -60,9 +61,9 @@ MainView {
                     {
                         name: "Portfolio"
                     },
-                    {
+                    /*{
                         name: "Settings"
-                    },
+                    },*/
                     {
                         name: "About"
                     }
@@ -100,7 +101,7 @@ MainView {
         if (index === 1)
             return portfolioPage;
         if (index === 2)
-            return settingsPage;
+            return aboutPage;
         return aboutPage;
     }
 
@@ -121,5 +122,9 @@ MainView {
         AboutPage {}
     }
 
-    Component.onCompleted: console.log("UBCrypto started")
+    Component.onCompleted:
+    {
+        DB.initializeDatabase()
+        console.log("UBCrypto started")
+    }
 }

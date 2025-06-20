@@ -12,6 +12,38 @@ SYNC_INTERVAL_SECONDS = 900  # 15 minutes
 from logger import setup_logger
 log = setup_logger()
 
+from datetime import datetime
+
+def update_portfolio_snapshots(conn):
+    cursor = conn.cursor()
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    portfolios = cursor.execute("SELECT id FROM portfolios").fetchall()
+
+    for (portfolio_id,) in portfolios:
+        holdings = cursor.execute("""
+            SELECT h.coin_symbol, h.amount, c.current_price
+            FROM holdings h
+            JOIN coins c ON LOWER(h.coin_symbol) = LOWER(c.symbol)
+            WHERE h.portfolio_id = ?
+        """, (portfolio_id,)).fetchall()
+
+        total_value = sum(amount * (price or 0) for symbol, amount, price in holdings)
+
+        cursor.execute("""
+            INSERT OR REPLACE INTO portfolio_history (id, portfolio_id, date, total_value)
+            VALUES (
+                COALESCE(
+                    (SELECT id FROM portfolio_history WHERE portfolio_id = ? AND date = ?),
+                    NULL
+                ),
+                ?, ?, ?
+            )
+        """, (portfolio_id, today, portfolio_id, today, total_value))
+
+    conn.commit()
+
+
 def check_table_exists(db_path, table_name):
     try:
         conn = sqlite3.connect(db_path)
@@ -69,38 +101,54 @@ def resolve_qml_db_path(app_id=DB_FILE):
     log.debug("[ERROR] No QML DB found.")
     return None
 
-
 def sync_coins():
     try:
         coins = get_coins(limit=500)
         conn = sqlite3.connect(resolve_qml_db_path())
         c = conn.cursor()
 
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS coins (
-                id TEXT PRIMARY KEY,
-                symbol TEXT,
-                name TEXT,
-                json TEXT
-            )
-        ''')
-
         for coin in coins:
+            meta = coin.get("json", {})
             c.execute('''
-                INSERT OR REPLACE INTO coins (id, symbol, name, json)
-                VALUES (?, ?, ?, ?)
+                INSERT OR REPLACE INTO coins (
+                    id, symbol, name, image_url, current_price,
+                    market_cap, market_cap_rank, total_volume,
+                    high_24h, low_24h, price_change_24h,
+                    price_change_percentage_1h,
+                    price_change_percentage_24h,
+                    price_change_percentage_7d,
+                    price_change_percentage_30d,
+                    ath, atl, last_updated, json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 coin.get("id"),
-                coin.get("symbol").upper(),
+                coin.get("symbol", "").upper(),
                 coin.get("name"),
-                json.dumps(coin)
+                meta.get("image"),
+                meta.get("current_price"),
+                meta.get("market_cap"),
+                meta.get("market_cap_rank"),
+                meta.get("total_volume"),
+                meta.get("high_24h"),
+                meta.get("low_24h"),
+                meta.get("price_change_24h"),
+                meta.get("price_change_percentage_1h_in_currency"),
+                meta.get("price_change_percentage_24h_in_currency"),
+                meta.get("price_change_percentage_7d_in_currency"),
+                meta.get("price_change_percentage_30d_in_currency"),
+                meta.get("ath"),
+                meta.get("atl"),
+                meta.get("last_updated"),
+                json.dumps(meta)  # Keep full JSON for future flexibility
             ))
 
-        conn.commit()
+        update_portfolio_snapshots(conn)
+        conn.commit()      
         conn.close()
         print(f"[✔] Synced {len(coins)} coins.")
     except Exception as e:
         print(f"[ERROR] Sync failed: {e}")
+
 
 def background_sync_loop():
     while True:

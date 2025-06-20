@@ -9,11 +9,39 @@ Page {
 
     header: PageHeader {
         title: "Portfolio"
+        ActionBar {
+            numberOfSlots: 2
+            anchors.right: parent.right
+            actions: [
+                Action {
+                    iconName: "add"
+                    text: "Portfolio"
+                    onTriggered: newPortfolioDialog.open()
+                },
+                Action {
+                    iconName: "delete"
+                    text: "Portfolio"
+                    onTriggered: {
+                        if (selectedPortfolio !== -1) {
+                            DB.deletePortfolio(selectedPortfolio)
+                            reloadPortfolios()
+                        }
+                    }
+                },
+                Action {
+                    iconName: "add"
+                    text: "Coin"
+                    onTriggered: addCoinDialog.open()
+                }
+
+            ]
+        }
     }
 
     Flickable {
         id: flick
         anchors.fill: parent
+        anchors.margins: units.gu(1)
         contentHeight: contentColumn.implicitHeight
         clip: true
 
@@ -21,9 +49,9 @@ Page {
             id: contentColumn
             width: parent.width
             spacing: units.gu(2)
-            anchors.margins: units.gu(2)
 
             // === Top row with Combo + Buttons ===
+            // === Top row with Combo + Total ===
             Row {
                 id: topRow
                 spacing: units.gu(1)
@@ -34,38 +62,34 @@ Page {
                     width: parent.width * 0.4
                     model: portfolioNames
                     onCurrentIndexChanged: {
-                        selectedPortfolio = portfolioIds[currentIndex];
-                        loadHoldingsForPortfolio(selectedPortfolio);
+                        if (currentIndex >= 0 && currentIndex < portfolioIds.length) {
+                            selectedPortfolio = portfolioIds[currentIndex];
+                            loadHoldingsForPortfolio(selectedPortfolio);
+                        } else {
+                            selectedPortfolio = -1;
+                            holdingsModel = [];
+                        }
+                    }
+                }
+                Button {
+                    text: "Add"
+                    onClicked: {
+                        console.log("View Chart clicked")
                     }
                 }
 
                 Button {
-                    text: "New"
-                    width: parent.width * 0.18
-                    onClicked: newPortfolioDialog.open()
-                }
-
-                Button {
-                    text: "Coin"
-                    width: parent.width * 0.18
-                    enabled: selectedPortfolio !== -1
-                    onClicked: addCoinDialog.open()
-                }
-
-                Button {
                     text: "Delete"
-                    width: parent.width * 0.18
-                    enabled: selectedPortfolio !== -1
                     onClicked: {
-                        DB.deletePortfolio(selectedPortfolio);
-                        reloadPortfolios();
+                        totalValue = DB.getTodaysTotalValue(selectedPortfolio)
+                        console.log("Snapshot refreshed")
                     }
                 }
             }
 
             // === Holdings Header ===
             Text {
-                text: "Your Holdings"
+                text: "Your Holdings" + " Worth ($" + totalValue.toFixed(2)+")"
                 font.bold: true
                 font.pointSize: 10
             }
@@ -83,7 +107,7 @@ Page {
                         coinSymbol: modelData.coin_symbol
                         quantity: modelData.amount
                         price: modelData.current_price     // from DB or pre-fetched
-                        change24h: modelData.change_24h    // optional
+                        total_value: modelData.total_value    // optional
                         coinImage: modelData.image_url     // optional
                     }
                 }
@@ -117,6 +141,7 @@ Page {
     property var portfolioIds: []
     property int selectedPortfolio: -1
     property var holdingsModel: []
+    property real totalValue: 0.0
 
     // === Logic ===
     Component.onCompleted: reloadPortfolios()
@@ -135,6 +160,18 @@ Page {
     }
 
     function loadHoldingsForPortfolio(portfolioId) {
-        holdingsModel = DB.getHoldings(portfolioId);
+        var holdings = DB.getHoldings(portfolioId);
+        holdingsModel = holdings;
+
+        // Compute total value from holdings
+        var total = 0.0;
+        for (var i = 0; i < holdings.length; i++) {
+            var val = parseFloat(holdings[i].total_value);
+            if (!isNaN(val)) {
+                total += val;
+            }
+        }
+        totalValue = total;
     }
+
 }

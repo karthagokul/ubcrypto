@@ -45,12 +45,6 @@ Page {
             }
 
             Label {
-                text: "Developed by Gokul Kartha <kartha.gokul@gmail.com>"
-                font.italic: true
-                wrapMode: Text.WordWrap
-            }
-
-            Label {
                 text: "Version 1.0.0"
                 color: "#888"
             }
