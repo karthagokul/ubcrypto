@@ -9,85 +9,109 @@ function getDb() {
     return Sql.LocalStorage.openDatabaseSync(DB_NAME, DB_VERSION, DB_DISPLAY_NAME, DB_SIZE)
 }
 
-
 function initializeDatabase() {
-    try {
-        var db = getDb()
-        db.transaction(function (tx) {
-            // Portfolios table
-            tx.executeSql(`
-                          CREATE TABLE IF NOT EXISTS portfolios (
-                          id INTEGER PRIMARY KEY AUTOINCREMENT,
-                          name TEXT UNIQUE
-                          )
-                          `)
+    var db = getDb();
 
-            // Holdings table (Add new fields here in future)
-            tx.executeSql(`
-                          CREATE TABLE IF NOT EXISTS holdings (
-                          id INTEGER PRIMARY KEY AUTOINCREMENT,
-                          portfolio_id INTEGER,
-                          coin_symbol TEXT,
-                          amount REAL
-                          )
-                          `)
+    function createOrUpdateTable(label, createSQL, matchColumnList) {
+        try {
+            db.transaction(function (tx) {
+                tx.executeSql(createSQL);
+                console.log("✅ Created table: " + label);
 
-            // Add new column 'note' to holdings if not exists (example)
-            var columnsRs = tx.executeSql("PRAGMA table_info(holdings)")
-            var columnExists = false
-            for (var i = 0; i < columnsRs.rows.length; ++i) {
-                if (columnsRs.rows.item(i).name === "note") {
-                    columnExists = true
-                    break
+                var info = tx.executeSql('PRAGMA table_info(' + label + ')');
+                var existingCols = [];
+                for (var i = 0; i < info.rows.length; i++) {
+                    existingCols.push(info.rows.item(i).name);
                 }
-            }
-            if (!columnExists) {
-                tx.executeSql("ALTER TABLE holdings ADD COLUMN note TEXT")
-                console.log("[DB] Added 'note' column to holdings")
-            }
 
-            // Coins table with extended fields and JSON backup
-            tx.executeSql(`
-                CREATE TABLE IF NOT EXISTS coins (
-                    id TEXT PRIMARY KEY,
-                    symbol TEXT UNIQUE,
-                    name TEXT,
-                    image_url TEXT,
-                    current_price REAL,
-                    market_cap REAL,
-                    market_cap_rank INTEGER,
-                    total_volume REAL,
-                    high_24h REAL,
-                    low_24h REAL,
-                    price_change_24h REAL,
-                    price_change_percentage_1h REAL,
-                    price_change_percentage_24h REAL,
-                    price_change_percentage_7d REAL,
-                    price_change_percentage_30d REAL,
-                    ath REAL,
-                    atl REAL,
-                    last_updated TEXT,
-                    json TEXT
-                )
-            `)
-
-            tx.executeSql(`CREATE TABLE IF NOT EXISTS portfolio_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                portfolio_id INTEGER,
-                date TEXT, -- YYYY-MM-DD
-                total_value REAL,
-                UNIQUE(portfolio_id, date)
-            )`
-            )
-
-
-
-            console.log("[DB] Database initialized")
-        })
-    } catch (e) {
-        console.log("[DB Error] initializeDatabase: " + e)
+                for (var j = 0; j < matchColumnList.length; j++) {
+                    var colName = matchColumnList[j].split(' ')[0];
+                    if (!existingCols.includes(colName)) {
+                        tx.executeSql(`ALTER TABLE ${label} ADD COLUMN ${matchColumnList[j]}`);
+                        console.log("➕ Added column: " + matchColumnList[j] + " to " + label);
+                    }
+                }
+            });
+        } catch (e) {
+            console.log("❌ Failed to create or update " + label + ": " + e);
+        }
     }
+
+    // Portfolios Table
+    createOrUpdateTable("portfolios",
+        `CREATE TABLE IF NOT EXISTS portfolios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE
+        )`,
+        ['id INTEGER', 'name TEXT']
+    );
+
+    // Holdings Table
+    createOrUpdateTable("holdings",
+        `CREATE TABLE IF NOT EXISTS holdings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            portfolio_id INTEGER,
+            coin_symbol TEXT,
+            amount REAL
+        )`,
+        [
+            'id INTEGER',
+            'portfolio_id INTEGER',
+            'coin_symbol TEXT',
+            'amount REAL',
+            'note TEXT',
+            'total_purchase_value REAL',      // Or replace with average_buy_price
+            'average_buy_price REAL',
+            'last_purchase_date TEXT'
+        ]
+    );
+
+
+    // Coins Table
+    createOrUpdateTable("coins",
+        `CREATE TABLE IF NOT EXISTS coins (
+            id TEXT PRIMARY KEY,
+            symbol TEXT UNIQUE,
+            name TEXT,
+            image_url TEXT,
+            current_price REAL,
+            market_cap REAL,
+            market_cap_rank INTEGER,
+            total_volume REAL,
+            high_24h REAL,
+            low_24h REAL,
+            price_change_24h REAL,
+            price_change_percentage_1h REAL,
+            price_change_percentage_24h REAL,
+            price_change_percentage_7d REAL,
+            price_change_percentage_30d REAL,
+            ath REAL,
+            atl REAL,
+            last_updated TEXT,
+            json TEXT
+        )`,
+        ['id TEXT', 'symbol TEXT', 'name TEXT', 'image_url TEXT', 'current_price REAL', 'market_cap REAL',
+         'market_cap_rank INTEGER', 'total_volume REAL', 'high_24h REAL', 'low_24h REAL',
+         'price_change_24h REAL', 'price_change_percentage_1h REAL', 'price_change_percentage_24h REAL',
+         'price_change_percentage_7d REAL', 'price_change_percentage_30d REAL', 'ath REAL', 'atl REAL',
+         'last_updated TEXT', 'json TEXT']
+    );
+
+    // Portfolio History Table
+    createOrUpdateTable("portfolio_history",
+        `CREATE TABLE IF NOT EXISTS portfolio_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            portfolio_id INTEGER,
+            date TEXT,
+            total_value REAL,
+            UNIQUE(portfolio_id, date)
+        )`,
+        ['id INTEGER', 'portfolio_id INTEGER', 'date TEXT', 'total_value REAL']
+    );
+
+    console.log("[DB] ✅ Database initialized with all required tables and fields");
 }
+
 
 // Create and fetch all portfolios
 function getPortfolios() {
@@ -146,30 +170,48 @@ function deletePortfolio(id) {
         console.log("DB Error in deletePortfolio: " + e)
     }
 }
-
-// Add a coin/holding to a portfolio
 function addHolding(portfolioId, coinSymbol, amount, overwrite = false) {
     try {
         var db = getDb();
         db.transaction(function (tx) {
             coinSymbol = coinSymbol.toUpperCase();
-            var rs = tx.executeSql(
-                "SELECT * FROM holdings WHERE portfolio_id = ? AND coin_symbol = ?",
-                [portfolioId, coinSymbol]
-            );
+
+            // Get current price from coins table
+            var meta = tx.executeSql("SELECT current_price FROM coins WHERE LOWER(symbol) = LOWER(?)", [coinSymbol]);
+            if (meta.rows.length === 0) {
+                console.log("⚠️ No coin data found for: " + coinSymbol);
+                return;
+            }
+
+            var current_price = meta.rows.item(0).current_price || 0;
+            var newPurchaseValue = current_price * amount;
+
+            var rs = tx.executeSql("SELECT * FROM holdings WHERE portfolio_id = ? AND coin_symbol = ?", [portfolioId, coinSymbol]);
 
             if (rs.rows.length > 0) {
                 var existing = rs.rows.item(0);
-                var newAmount = overwrite ? amount : existing.amount + amount;
 
-                tx.executeSql(
-                    "UPDATE holdings SET amount = ? WHERE id = ?",
-                    [newAmount, existing.id]
-                );
+                if (overwrite) {
+                    // Overwrite everything — use the latest price to record purchase value
+                    tx.executeSql(
+                        "UPDATE holdings SET amount = ?, total_purchase_value = ? WHERE id = ?",
+                        [amount, newPurchaseValue, existing.id]
+                    );
+                } else {
+                    // Add to existing amount and total purchase value
+                    var updatedAmount = existing.amount + amount;
+                    var updatedPurchaseValue = (existing.total_purchase_value || 0) + newPurchaseValue;
+
+                    tx.executeSql(
+                        "UPDATE holdings SET amount = ?, total_purchase_value = ? WHERE id = ?",
+                        [updatedAmount, updatedPurchaseValue, existing.id]
+                    );
+                }
             } else {
+                // New record — insert with calculated purchase value
                 tx.executeSql(
-                    "INSERT INTO holdings (portfolio_id, coin_symbol, amount) VALUES (?, ?, ?)",
-                    [portfolioId, coinSymbol, amount]
+                    "INSERT INTO holdings (portfolio_id, coin_symbol, amount, total_purchase_value) VALUES (?, ?, ?, ?)",
+                    [portfolioId, coinSymbol, amount, newPurchaseValue]
                 );
             }
         });
@@ -177,7 +219,6 @@ function addHolding(portfolioId, coinSymbol, amount, overwrite = false) {
         console.log("DB Error in addHolding: " + e);
     }
 }
-
 
 function getHoldings(portfolioId) {
     var list = []
@@ -194,6 +235,9 @@ function getHoldings(portfolioId) {
                 var image_url = ""
                 var current_price = 0
                 var total_value = 0
+                var total_purchase_value = row.total_purchase_value
+                var delta = 0
+                var delta_percent = 0
                 var change_24h = ""
                 var change_24h_raw = 0
 
@@ -202,7 +246,7 @@ function getHoldings(portfolioId) {
                 var change_30d = 0
                 var market_cap_rank = -1
 
-                // Case-insensitive match
+                // Get metadata first so we can compute total_value
                 var meta = tx.executeSql("SELECT * FROM coins WHERE LOWER(symbol) = LOWER(?)", [symbol])
                 if (meta.rows.length > 0) {
                     var metaRow = meta.rows.item(0)
@@ -219,14 +263,30 @@ function getHoldings(portfolioId) {
                     change_24h = (change_24h_raw >= 0 ? "+" : "") + change_24h_raw.toFixed(2) + "%"
                 }
 
+                // Now backfill only if necessary
+                if (total_purchase_value === null || total_purchase_value === undefined || total_purchase_value === 0) {
+                    total_purchase_value = total_value
+                    tx.executeSql("UPDATE holdings SET total_purchase_value = ? WHERE id = ?", [total_purchase_value, row.id])
+                    console.log("📦 Backfilled purchase value for", symbol, "→", total_purchase_value.toFixed(2))
+                }
+
+                // Calculate delta
+                delta = total_value - total_purchase_value
+                if (total_purchase_value > 0) {
+                    delta_percent = (delta / total_purchase_value) * 100
+                }
+
                 list.push({
-                    id:metaRow.id,
+                    id: metaRow.id,
                     coin_symbol: symbol,
                     coin_name: name,
                     image_url: image_url,
                     amount: amount,
                     current_price: current_price.toFixed(2),
                     total_value: total_value.toFixed(2),
+                    total_purchase_value: total_purchase_value.toFixed(2),
+                    delta: delta.toFixed(2),
+                    delta_percent: delta_percent.toFixed(2),
                     change_24h: change_24h,
                     price_change_percentage_1h: change_1h,
                     price_change_percentage_24h: change_24h_raw,
@@ -242,17 +302,18 @@ function getHoldings(portfolioId) {
     return list
 }
 
+
 function getTopGainers() {
     var db = getDb()
     var result = [];
 
     db.transaction(function(tx) {
         var rs = tx.executeSql(`
-            SELECT * FROM coins
-            WHERE price_change_percentage_24h IS NOT NULL
-            ORDER BY price_change_percentage_24h DESC
-            LIMIT 20
-        `);
+                               SELECT * FROM coins
+                               WHERE price_change_percentage_24h IS NOT NULL
+                               ORDER BY price_change_percentage_24h DESC
+                               LIMIT 20
+                               `);
 
         for (var i = 0; i < rs.rows.length; i++) {
             result.push(rs.rows.item(i));
@@ -263,16 +324,16 @@ function getTopGainers() {
 }
 
 function getTopLosers() {
-     var db = getDb()
+    var db = getDb()
     var result = [];
 
     db.transaction(function(tx) {
         var rs = tx.executeSql(`
-            SELECT * FROM coins
-            WHERE price_change_percentage_24h IS NOT NULL
-            ORDER BY price_change_percentage_24h ASC
-            LIMIT 20
-        `);
+                               SELECT * FROM coins
+                               WHERE price_change_percentage_24h IS NOT NULL
+                               ORDER BY price_change_percentage_24h ASC
+                               LIMIT 20
+                               `);
 
         for (var i = 0; i < rs.rows.length; i++) {
             result.push(rs.rows.item(i));
@@ -289,18 +350,18 @@ function getPortfolioHistory(portfolioId) {
 
     db.readTransaction(function (tx) {
         var rs = tx.executeSql(
-            `SELECT date, total_value
-             FROM portfolio_history
-             WHERE portfolio_id = ?
-             ORDER BY date ASC`,
-            [portfolioId]
-        );
+                    `SELECT date, total_value
+                    FROM portfolio_history
+                    WHERE portfolio_id = ?
+                    ORDER BY date ASC`,
+                    [portfolioId]
+                    );
 
         for (var i = 0; i < rs.rows.length; i++) {
             results.push({
-                date: rs.rows.item(i).date,
-                total_value: rs.rows.item(i).total_value
-            });
+                             date: rs.rows.item(i).date,
+                             total_value: rs.rows.item(i).total_value
+                         });
         }
     });
 
@@ -313,9 +374,9 @@ function deleteHolding(portfolioId, coinSymbol) {
     try {
         db.transaction(function(tx) {
             tx.executeSql(
-                `DELETE FROM holdings WHERE portfolio_id = ? AND coin_symbol = ?`,
-                [portfolioId, coinSymbol]
-            );
+                        `DELETE FROM holdings WHERE portfolio_id = ? AND coin_symbol = ?`,
+                        [portfolioId, coinSymbol]
+                        );
             console.log(`Holding deleted: ${coinSymbol} from portfolio ${portfolioId}`);
         });
     } catch (error) {
