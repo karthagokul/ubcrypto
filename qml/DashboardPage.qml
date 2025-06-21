@@ -18,11 +18,12 @@ Page {
     property string currentFilter: "all"
 
     Component.onCompleted: {
-        loadCoins();
+        var coins = DB.getAllCoins();
+        //console.log("Loaded coins:", JSON.stringify(coins));
+        loadCoins(coins);
     }
 
-    function loadCoins() {
-        var dataArray = DB.getAllCoins();
+    function loadCoins(dataArray) {
         coinModel.clear();
 
         for (var i = 0; i < dataArray.length; i++) {
@@ -245,7 +246,9 @@ Page {
                     text: "Refresh"
                     anchors.horizontalCenter: parent.horizontalCenter // Keep centering for the Button
                     onClicked: {
-                       loadCoins();
+                        var coins = DB.getAllCoins();
+                        //console.log("Loaded coins:", JSON.stringify(coins));
+                        loadCoins(coins);
                     }
                 }
             }
