@@ -6,7 +6,7 @@ import "datastore.js" as DB
 
 MainView {
     id: mainView
-    applicationName: "UBCrypto"
+    applicationName: "ubcrypto"
     property int selectedTab: 0
 
     Python {

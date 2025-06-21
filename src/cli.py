@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 import logging
 
-DB_FILE = "UBCrypto"
+DB_FILE = "ubcrypto"
 SYNC_INTERVAL_SECONDS = 900  # 15 minutes
 
 from logger import setup_logger
@@ -71,7 +71,6 @@ def is_file_present(file_path):
 
 
 def resolve_qml_db_path(app_id=DB_FILE):
-
     db_paths = []
     current_dir = Path(__file__).parent.resolve()
 
@@ -100,6 +99,8 @@ def resolve_qml_db_path(app_id=DB_FILE):
 
     log.debug("[ERROR] No QML DB found.")
     return None
+
+
 
 def sync_coins():
     try:

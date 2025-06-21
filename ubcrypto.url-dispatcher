@@ -1,0 +1,9 @@
+[
+	{
+		"protocol": "https",
+                "domain-suffix": "api.coingecko.com/api/v3"
+        },
+        {
+            "protocol": "crypto"
+        }
+]

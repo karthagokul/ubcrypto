@@ -1,15 +1,16 @@
 {
-    "name": "ubcrypto.gokul",
-    "description": "Crypto Portfolio Tracker for Ubuntu Touch",
+    "name": "ubcrypto",
+    "description": "Crypto Portfolio Manager for Ubuntu Touch Devices",
     "architecture": "@CLICK_ARCH@",
-    "title": "UBCrypto",
+    "title": "ubcrypto",
     "hooks": {
         "ubcrypto": {
             "apparmor": "ubcrypto.apparmor",
-            "desktop":  "ubcrypto.desktop"
+            "desktop":  "ubcrypto.desktop",
+             "urls": "@URLS_FILE@"
         }
     },
     "version": "1.0.0",
-    "maintainer": "Kartha.gokul@gmail.com <kartha.gokul@gmail.com>",
+    "maintainer": "Gokul Kartha <kartha.gokul@gmail.com>",
     "framework" : "@CLICK_FRAMEWORK@"
 }

@@ -1,12 +1,10 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import QtQuick.Layouts 1.3
 
 Rectangle {
     id: coinCard
     width: parent.width
-    color: "#ffffff"
-    border.color: "#ccc"
-    radius: 10
     anchors.margins: units.gu(0.5)
 
     property string coinName: ""
@@ -50,48 +48,50 @@ Rectangle {
         }
 
         // ─── Coin Info ───
-        Column {
-            width: parent.width * 0.45
+        Row {
+            width: parent.width * 0.40
             spacing: units.gu(0.3)
 
-            Text {
-                text: coinName
-                font.pixelSize: units.gu(2.2)
-                font.bold: true
-                color: "#222"
-                elide: Text.ElideRight
-            }
+            // Coin name + symbol
+            Column {
+                spacing: 0
 
-            Text {
-                text: coinSymbol.toUpperCase()
-                font.pixelSize: units.gu(1.6)
-                color: "#666"
-            }
+                Text {
+                    text: coinName
+                    font.pixelSize: units.gu(2.2)
+                    font.bold: true
+                    color: "#222"
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideNone
+                    width: parent.width    // Make sure this limits the line length
+                }
 
-            Text {
-                text: "Rank #" + marketCapRank
-                font.pixelSize: units.gu(1.5)
-                color: "#999"
-                visible: marketCapRank > 0
+
+                Text {
+                    text: coinSymbol.toUpperCase() + " #" + marketCapRank
+                    font.pixelSize: units.gu(1.6)
+                    color: "#666"
+                }
             }
         }
 
+
         // ─── Price + Change Stats ───
         Column {
-            width: parent.width * 0.35
+            width: parent.width * 0.39
             height:parent.height
             spacing: units.gu(1)
             anchors.verticalCenter: parent.verticalCenter
+            Layout.alignment: Qt.AlignRight // Use Layout.alignment for Column/Row/Grid layouts
 
-            Text {
-                text: "$" + currentPrice.toFixed(2)
-                font.pixelSize: units.gu(2)
-                font.bold: true
-                color: "#000"
-                horizontalAlignment: Text.AlignRight
-                width: parent.width
-            }
-
+            PriceWidget { // Use your new component here
+                  value: currentPrice // Pass your price data to the 'value' property
+                  // currencySymbol: "$" // Optional, "$" is default
+                  font.pixelSize: units.gu(2) // You can override font size or other properties here
+                  font.bold: true
+                  color: "#000"
+                  // horizontalAlignment and width are handled internally, but can be overridden if needed
+              }
             ChangeStats {
                 width: parent.width
                 height: parent.height
@@ -99,7 +99,6 @@ Rectangle {
                 change24h: price_change_percentage_24h
                 change7d: price_change_percentage_7d
                 change30d: price_change_percentage_30d
-
             }
         }
     }

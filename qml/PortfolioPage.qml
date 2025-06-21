@@ -27,11 +27,6 @@ Page {
                             reloadPortfolios()
                         }
                     }
-                },
-                Action {
-                    iconName: "add"
-                    text: "Coin"
-                    onTriggered: addCoinDialog.open()
                 }
 
             ]
@@ -74,15 +69,7 @@ Page {
                 Button {
                     text: "Add"
                     onClicked: {
-                        console.log("View Chart clicked")
-                    }
-                }
-
-                Button {
-                    text: "Delete"
-                    onClicked: {
-                        totalValue = DB.getTodaysTotalValue(selectedPortfolio)
-                        console.log("Snapshot refreshed")
+                        addCoinDialog.open()
                     }
                 }
             }
@@ -94,24 +81,45 @@ Page {
                 font.pointSize: 10
             }
 
-            // === Holdings List ===
-            Column {
-                id: contentCol
-                width: parent.width
-                spacing: units.gu(1)
+            /*  PortfolioChart{
+                id: historyChart
+                  height: units.gu(30)
+                  width: parent.width
+            }*/
 
-                Repeater {
-                    model: holdingsModel
-                    delegate: PortfolioItem {
-                        coinName: modelData.coin_name      // optional, fallback to symbol if not available
-                        coinSymbol: modelData.coin_symbol
-                        quantity: modelData.amount
-                        price: modelData.current_price     // from DB or pre-fetched
-                        total_value: modelData.total_value    // optional
-                        coinImage: modelData.image_url     // optional
+            ListView {
+                id: holdingsList
+                width: parent.width
+                height: units.gu(60)
+                spacing: units.gu(1)
+                model: holdingsModel
+
+                delegate: PortfolioItem {
+                    coinName: modelData.coin_name
+                    coinSymbol: modelData.coin_symbol
+                    quantity: modelData.amount
+                    price: modelData.current_price
+                    total_value: modelData.total_value
+                    coinImage: modelData.image_url
+                    recordId: modelData.id   // Make sure you pass this from your DB!
+                    onEditRequested: {
+                        console.log("Edit requested for record:", recordId)
+                        addCoinDialog.editMode = true;
+                        addCoinDialog.editingSymbol = modelData.coin_symbol;
+                        addCoinDialog.symbolField.text = modelData.coin_symbol;
+                        addCoinDialog.amountField.text = modelData.amount.toString();
+                        addCoinDialog.open();
+                    }
+
+                    onDeleteRequested: {
+                        if (selectedPortfolio !== -1) {
+                            DB.deleteHolding(selectedPortfolio, coinSymbol);
+                            loadHoldingsForPortfolio(selectedPortfolio);
+                        }
                     }
                 }
             }
+
         }
     }
 
@@ -128,13 +136,22 @@ Page {
     // === Dialog: Add Coin ===
     AddCoinDialog {
         id: addCoinDialog
+
         onCoinAdded: {
             if (selectedPortfolio !== -1) {
                 DB.addHolding(selectedPortfolio, symbol, amount);
                 loadHoldingsForPortfolio(selectedPortfolio);
             }
         }
+
+        onCoinEdited: {
+            if (selectedPortfolio !== -1) {
+                DB.addHolding(selectedPortfolio, symbol, amount,true);
+                loadHoldingsForPortfolio(selectedPortfolio);
+            }
+        }
     }
+
 
     // === Properties ===
     property var portfolioNames: []
@@ -154,6 +171,7 @@ Page {
             selectedPortfolio = portfolioIds[0];
             portfolioSelector.currentIndex = 0;
             loadHoldingsForPortfolio(selectedPortfolio);
+
         } else {
             holdingsModel = [];
         }

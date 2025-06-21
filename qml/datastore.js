@@ -148,24 +148,37 @@ function deletePortfolio(id) {
 }
 
 // Add a coin/holding to a portfolio
-function addHolding(portfolioId, coinSymbol, amount) {
+function addHolding(portfolioId, coinSymbol, amount, overwrite = false) {
     try {
-        var db = getDb()
+        var db = getDb();
         db.transaction(function (tx) {
-            // If coin already exists, update the amount
-            var rs = tx.executeSql("SELECT * FROM holdings WHERE portfolio_id = ? AND coin_symbol = ?", [portfolioId, coinSymbol.toUpperCase()])
+            coinSymbol = coinSymbol.toUpperCase();
+            var rs = tx.executeSql(
+                "SELECT * FROM holdings WHERE portfolio_id = ? AND coin_symbol = ?",
+                [portfolioId, coinSymbol]
+            );
+
             if (rs.rows.length > 0) {
-                var existing = rs.rows.item(0)
-                var newAmount = existing.amount + amount
-                tx.executeSql("UPDATE holdings SET amount = ? WHERE id = ?", [newAmount, existing.id])
+                var existing = rs.rows.item(0);
+                var newAmount = overwrite ? amount : existing.amount + amount;
+
+                tx.executeSql(
+                    "UPDATE holdings SET amount = ? WHERE id = ?",
+                    [newAmount, existing.id]
+                );
             } else {
-                tx.executeSql("INSERT INTO holdings (portfolio_id, coin_symbol, amount) VALUES (?, ?, ?)", [portfolioId, coinSymbol.toUpperCase(), amount])
+                tx.executeSql(
+                    "INSERT INTO holdings (portfolio_id, coin_symbol, amount) VALUES (?, ?, ?)",
+                    [portfolioId, coinSymbol, amount]
+                );
             }
-        })
+        });
     } catch (e) {
-        console.log("DB Error in addHolding: " + e)
+        console.log("DB Error in addHolding: " + e);
     }
 }
+
+
 function getHoldings(portfolioId) {
     var list = []
     try {
@@ -207,6 +220,7 @@ function getHoldings(portfolioId) {
                 }
 
                 list.push({
+                    id:metaRow.id,
                     coin_symbol: symbol,
                     coin_name: name,
                     image_url: image_url,
@@ -226,4 +240,85 @@ function getHoldings(portfolioId) {
         console.log("DB Error in getHoldings: " + e)
     }
     return list
+}
+
+function getTopGainers() {
+    var db = getDb()
+    var result = [];
+
+    db.transaction(function(tx) {
+        var rs = tx.executeSql(`
+            SELECT * FROM coins
+            WHERE price_change_percentage_24h IS NOT NULL
+            ORDER BY price_change_percentage_24h DESC
+            LIMIT 20
+        `);
+
+        for (var i = 0; i < rs.rows.length; i++) {
+            result.push(rs.rows.item(i));
+        }
+    });
+
+    return result;
+}
+
+function getTopLosers() {
+     var db = getDb()
+    var result = [];
+
+    db.transaction(function(tx) {
+        var rs = tx.executeSql(`
+            SELECT * FROM coins
+            WHERE price_change_percentage_24h IS NOT NULL
+            ORDER BY price_change_percentage_24h ASC
+            LIMIT 20
+        `);
+
+        for (var i = 0; i < rs.rows.length; i++) {
+            result.push(rs.rows.item(i));
+        }
+    });
+
+    return result;
+}
+
+
+function getPortfolioHistory(portfolioId) {
+    var db = getDb()
+    var results = [];
+
+    db.readTransaction(function (tx) {
+        var rs = tx.executeSql(
+            `SELECT date, total_value
+             FROM portfolio_history
+             WHERE portfolio_id = ?
+             ORDER BY date ASC`,
+            [portfolioId]
+        );
+
+        for (var i = 0; i < rs.rows.length; i++) {
+            results.push({
+                date: rs.rows.item(i).date,
+                total_value: rs.rows.item(i).total_value
+            });
+        }
+    });
+
+    return results;
+}
+
+
+function deleteHolding(portfolioId, coinSymbol) {
+    var db = getDb()
+    try {
+        db.transaction(function(tx) {
+            tx.executeSql(
+                `DELETE FROM holdings WHERE portfolio_id = ? AND coin_symbol = ?`,
+                [portfolioId, coinSymbol]
+            );
+            console.log(`Holding deleted: ${coinSymbol} from portfolio ${portfolioId}`);
+        });
+    } catch (error) {
+        console.error("Failed to delete holding:", error);
+    }
 }

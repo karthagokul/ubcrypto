@@ -1,13 +1,11 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
 
-Rectangle {
+ListItem {
     id: portfolioCard
     width: parent ? parent.width : Screen.width
     height: units.gu(10)
-    radius: 8
     color: "#fff"
-    border.color: "#ddd"
     anchors.margins: units.gu(0.5)
 
     // Input Properties
@@ -17,6 +15,24 @@ Rectangle {
     property string total_value: ""
     property url coinImage: ""
     property real quantity: 0
+    property string recordId
+
+    signal editRequested(string recordId)
+    signal deleteRequested(string recordId)
+
+    trailingActions: ListItemActions {
+           actions: [
+               Action {
+                   iconName: "edit"
+                   onTriggered: editRequested(recordId)
+               },
+               Action {
+                   iconName: "delete"
+                   onTriggered: deleteRequested(recordId)
+               }
+           ]
+       }
+
 
     Row {
         anchors.fill: parent
@@ -80,14 +96,14 @@ Rectangle {
                     horizontalAlignment: Text.AlignRight
                 }
 
-                Text {
+                PriceWidget {
                     text: "Unit: $" + Number(price).toFixed(2)
                     font.pixelSize: units.gu(1.5)
                     color: "#333"
                     horizontalAlignment: Text.AlignRight
                 }
 
-                Text {
+                PriceWidget {
                     text: "Total: $" + Number(total_value).toFixed(2)
                     font.pixelSize: units.gu(1.5)
                     color: "#333"
