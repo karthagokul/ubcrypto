@@ -4,6 +4,7 @@ import QtQuick.Controls 2.2
 // If this component will be used inside QtQuick.Layouts (like RowLayout, ColumnLayout),
 // then you might want to import Layouts here as well.
 // import QtQuick.Layouts 1.3 // Uncomment if needed
+import "theme.js" as AppTheme
 
 Text {
     id: root

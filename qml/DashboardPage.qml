@@ -4,6 +4,7 @@ import QtQuick.Controls 2.2
 import io.thp.pyotherside 1.4
 import "datastore.js" as DB
 import QtQuick.Layouts 1.3 // Ensure this is imported if you're using Layouts elsewhere
+import "theme.js" as AppTheme
 
 Page {
     id: dashboardPage

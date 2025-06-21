@@ -2,6 +2,7 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Controls 2.2
+import "theme.js" as AppTheme
 
 Rectangle {
     id: splashScreen

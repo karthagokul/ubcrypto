@@ -1,6 +1,7 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3 // IMPORTANT: Need this for RowLayout and GridLayout properties
+import "theme.js" as AppTheme
 
 Item {
     id: changeBox
@@ -28,7 +29,7 @@ Item {
 
             Text {
                 text: "1h:"
-                color:"#444444"
+                color: AppTheme.getThemeColors(theme.name).textColorPrimary
                 font.pixelSize: units.gu(1.8)
             }
 
@@ -61,7 +62,7 @@ Item {
 
             Text {
                 text: "24h:"
-                color: "#444444"
+                color:  AppTheme.getThemeColors(theme.name).textColorPrimary
                 font.pixelSize: units.gu(1.8)
             }
 

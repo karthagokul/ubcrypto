@@ -6,6 +6,9 @@ import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Controls 2.2
 import io.thp.pyotherside 1.4
+import "theme.js" as AppTheme
+
+
 Page {
     header: PageHeader {
         title: "Latest News"
@@ -153,7 +156,7 @@ Page {
     ListView {
         anchors.fill: parent
         anchors.topMargin: 8
-        anchors.bottomMargin: refreshButton.height + 16
+        anchors.bottomMargin: parent.bottom
         spacing: 8
         model: unifiedNewsModel
 
