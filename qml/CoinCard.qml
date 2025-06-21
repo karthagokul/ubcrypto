@@ -2,7 +2,7 @@ import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3 // Import for RowLayout and Layout.fillWidth
 
-Rectangle {
+ListItem {
     id: coinCard
     width: parent.width // CoinCard takes the full width of its parent (e.g., the Column in Dashboard)
     anchors.margins: units.gu(0.5) // Margin around the whole card
@@ -22,8 +22,23 @@ Rectangle {
     property real price_change_percentage_7d: 0
     property real price_change_percentage_30d: 0
 
+    property string formattedTotalVolume: coinCard.formatLargeNumber(totalVolume) // New property
+
     // Use Layout.implicitHeight for contentRow wrapped by RowLayout
     implicitHeight: contentLayout.implicitHeight + units.gu(2) // Adding padding for top/bottom
+
+    function formatLargeNumber(num) {
+        if (Math.abs(num) >= 1000000000) { // Billions
+            return (num / 1000000000).toFixed(1) + 'B';
+        }
+        if (Math.abs(num) >= 1000000) { // Millions
+            return (num / 1000000).toFixed(1) + 'M';
+        }
+        if (Math.abs(num) >= 1000) { // Thousands
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toFixed(0); // For numbers less than 1000, just show as is (no decimals for whole numbers)
+    }
 
     // Use RowLayout for the main horizontal arrangement
     RowLayout { // Replaced the outer Row with RowLayout
@@ -38,9 +53,6 @@ Rectangle {
             Layout.preferredWidth: width // Tell Layout to use this width
             Layout.preferredHeight: height // Tell Layout to use this height
             color: "transparent"
-            radius: 6
-            border.color: "#ddd"
-
             Image {
                 anchors.centerIn: parent
                 source: coinImage
@@ -75,6 +87,12 @@ Rectangle {
                 font.pixelSize: units.gu(1.6)
                 color: "#444444"
             }
+
+            Text {
+                text: "Volume: " + formattedTotalVolume
+                font.pixelSize: units.gu(1.6)
+                color: "#444444"
+            }
         }
 
         // ─── Price + Change Stats ───
@@ -97,7 +115,7 @@ Rectangle {
                 font.pixelSize: units.gu(2)
                 font.bold: true
                 color: "#000"
-                horizontalAlignment: Text.AlignRight // Align text right
+                horizontalAlignment: Text.AlignHCenter // Align text right
             }
 
             ChangeStats {
