@@ -1,6 +1,7 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.2
 import Lomiri.Components 1.3
+import "theme.js" as AppTheme
 
 Rectangle {
     id: filterNavBar

@@ -3,6 +3,7 @@ import Lomiri.Components 1.3
 import QtQuick.Controls 2.2
 import QtQuick.Window 2.2
 import "datastore.js" as DB
+import "theme.js" as AppTheme
 
 Page {
     id: portfolioPage

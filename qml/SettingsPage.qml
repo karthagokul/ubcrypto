@@ -1,6 +1,7 @@
 // qml/PortfolioPage.qml
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import "theme.js" as AppTheme
 
 Page {
     id: portfolioPage

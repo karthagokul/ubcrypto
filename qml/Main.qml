@@ -3,6 +3,8 @@ import QtQuick 2.7
 import Lomiri.Components 1.3
 import io.thp.pyotherside 1.4
 import "db_core.js" as DBCore
+import "theme.js" as AppTheme
+
 
 MainView {
     id: mainView
@@ -136,6 +138,6 @@ MainView {
     Component.onCompleted:
     {
         DBCore.initializeDatabase()
-        console.log("UBCrypto started")
+        console.log("UBCrypto started and theme used is " + theme.name)
     }
 }

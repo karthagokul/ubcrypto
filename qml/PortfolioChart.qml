@@ -1,6 +1,7 @@
 import QtQuick 2.7
 import QtCharts 2.0
 import QtQuick.Controls 2.2
+import "theme.js" as AppTheme
 
 Item {
     id: root

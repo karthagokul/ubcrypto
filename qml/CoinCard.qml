@@ -1,6 +1,8 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3 // Import for RowLayout and Layout.fillWidth
+import "theme.js" as AppTheme
+
 
 ListItem {
     id: coinCard
@@ -74,7 +76,7 @@ ListItem {
                 width:parent.width
                 font.pixelSize: units.gu(2.5)
                 //font.bold: true
-                color: "#222"
+                color: AppTheme.getThemeColors(theme.name).textColorPrimary
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
                 // elide: Text.ElideRight // Consider elide if name can be very long
@@ -84,13 +86,13 @@ ListItem {
             Text {
                 text: coinSymbol.toUpperCase() + " #" + marketCapRank
                 font.pixelSize: units.gu(1.6)
-                color: "#444444"
+                color: AppTheme.getThemeColors(theme.name).textColorPrimary
             }
 
             Text {
                 text: "Volume: " + formattedTotalVolume
                 font.pixelSize: units.gu(1.6)
-                color: "#444444"
+                color: AppTheme.getThemeColors(theme.name).textColorPrimary
             }
         }
 
@@ -113,7 +115,7 @@ ListItem {
                 value: currentPrice
                 font.pixelSize: units.gu(2)
                 font.bold: false
-                color: "#000"
+                color:AppTheme.getThemeColors(theme.name).textColorPrimary
                 horizontalAlignment: Text.AlignHCenter // Align text right
             }
 
@@ -133,6 +135,6 @@ ListItem {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: 1
-        color: "#e0e0e0"
+        color: AppTheme.getThemeColors(theme.name).separatorColor
     }
 }

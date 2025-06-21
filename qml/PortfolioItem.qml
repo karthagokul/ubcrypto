@@ -1,11 +1,11 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import "theme.js" as AppTheme
 
 ListItem {
     id: portfolioCard
     width: parent ? parent.width : Screen.width
     height: units.gu(10)
-    color: "#fff"
     anchors.margins: units.gu(0.5)
 
     // Input Properties
@@ -67,7 +67,7 @@ ListItem {
                         text: coinName
                         font.pixelSize: units.gu(2.2)
                         //font.bold: true
-                        color: "#222"
+                        color: AppTheme.getThemeColors(theme.name).textColorPrimary
                         elide: Text.ElideRight
                         wrapMode: Text.WordWrap
                     }
@@ -75,7 +75,7 @@ ListItem {
                     Text {
                         text: coinSymbol.toUpperCase()
                         font.pixelSize: units.gu(1.8)
-                        color: "#666"
+                        color: AppTheme.getThemeColors(theme.name).textColorPrimary
                     }
                 }
             }
@@ -94,7 +94,7 @@ ListItem {
                 Text {
                     text: "Qty: " + quantity
                     font.pixelSize: units.gu(1.5)
-                    color: "#333"
+                    color: AppTheme.getThemeColors(theme.name).textColorPrimary
                     horizontalAlignment: Text.AlignRight
                 }
 
@@ -111,7 +111,7 @@ ListItem {
                     text: "Unit: $" + Number(price).toFixed(2)
                     font.bold:false
                     font.pixelSize: units.gu(2)
-                    color: "#333"
+                    color: AppTheme.getThemeColors(theme.name).textColorPrimary
                     horizontalAlignment: Text.AlignRight
                 }
 
@@ -119,7 +119,7 @@ ListItem {
                     text: "Current Value : $" + Number(total_value).toFixed(2)
                     font.bold:false
                     font.pixelSize: units.gu(2)
-                    color: "#333"
+                    color: AppTheme.getThemeColors(theme.name).textColorPrimary
                     horizontalAlignment: Text.AlignRight
                 }
             }

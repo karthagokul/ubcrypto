@@ -3,6 +3,8 @@ import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.Controls 2.2 // For potential Heading or more styled Text
 import Qt.labs.platform 1.0 as Platform // For opening external links (if available on UT)
+import "theme.js" as AppTheme
+
 
 Page {
     id: aboutPage
@@ -25,6 +27,7 @@ Page {
             // --- Section: About UBCrypto ---
             Text {
                 text: "UBCrypto"
+                color:AppTheme.getThemeColors(theme.name).textColorPrimary
                 font.pixelSize: units.gu(3) // Larger font for app name
                 font.bold: true
                 horizontalAlignment: Text.AlignHCenter
@@ -34,7 +37,7 @@ Page {
             Text {
                 text: "Your essential lightweight cryptocurrency tracking app for Ubuntu Touch. Stay informed with live market data, manage your personal portfolio, and enjoy a clean, intuitive user interface designed for mobile."
                 font.pixelSize: units.gu(1.8)
-                color: "#444" // Darker text for better readability
+                color:AppTheme.getThemeColors(theme.name).textColorPrimary
                 width: parent.width
                 wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignHCenter
@@ -48,7 +51,7 @@ Page {
                 text: "Key Features"
                 font.pixelSize: units.gu(2.2) // Heading size
                 font.bold: true
-                color: "#222"
+                color:AppTheme.getThemeColors(theme.name).textColorPrimary
                 width: parent.width
                 horizontalAlignment: Text.AlignLeft // Align left
             }
@@ -57,7 +60,7 @@ Page {
             Text {
                 textFormat: Text.RichText // Enable HTML rendering
                 font.pixelSize: units.gu(1.8)
-                color: "#444"
+                color:AppTheme.getThemeColors(theme.name).textColorPrimary
                 width: parent.width
                 wrapMode: Text.WordWrap
                 text: "<ul>" + // Unordered list
@@ -77,7 +80,7 @@ Page {
                 text: "Links"
                 font.pixelSize: units.gu(2)
                 font.bold: true
-                color: "#222"
+                color:AppTheme.getThemeColors(theme.name).textColorPrimary
                 width: parent.width
                 horizontalAlignment: Text.AlignLeft
             }
@@ -85,7 +88,7 @@ Page {
             Text {
                 text: "Source Code : https://github.com/karthagokul/ubcrypto"
                 font.pixelSize: units.gu(1.6)
-                color: "#222"
+                color:AppTheme.getThemeColors(theme.name).textColorPrimary
                 textFormat: Text.RichText
                 MouseArea {
                     anchors.fill: parent
@@ -95,7 +98,7 @@ Page {
                 }
             }
 
-            Rectangle { width: parent.width; height: 1; color: "#e0e0e0"; } // Subtle separator
+            Rectangle { width: parent.width; height: 1; color:AppTheme.getThemeColors(theme.name).separatorColor; } // Subtle separator
 
         }
     }
