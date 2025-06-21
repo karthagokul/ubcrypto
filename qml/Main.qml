@@ -2,7 +2,7 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import io.thp.pyotherside 1.4
-import "datastore.js" as DB
+import "db_core.js" as DBCore
 
 MainView {
     id: mainView
@@ -50,15 +50,18 @@ MainView {
         Row {
             anchors.centerIn: parent
             anchors.left: navBar.left
-            spacing: units.gu(1)
+            spacing: units.gu(0.5)
 
             Repeater {
                 model: [
                     {
-                        name: "DASHBOARD"
+                        name: "HOME"
                     },
                     {
                         name: "PORTFOLIO"
+                    },
+                    {
+                        name: "NEWS"
                     },
                     {
                         name: "ABOUT"
@@ -66,7 +69,7 @@ MainView {
                 ]
 
                 delegate: MouseArea {
-                    width: units.gu(14)
+                    width: units.gu(12)
                     height: navBar.height
                     onClicked: {
                         selectedTab = index;
@@ -97,8 +100,10 @@ MainView {
         if (index === 1)
             return portfolioPage;
         if (index === 2)
+            return newsPage;
+        if (index === 3)
             return aboutPage;
-        return aboutPage;
+        return dashboardPage;
     }
 
     Component {
@@ -117,7 +122,10 @@ MainView {
         id: aboutPage
         AboutPage {}
     }
-
+    Component {
+            id: newsPage
+            NewsPage {}
+    }
     SplashScreen{
         id:splash
         onFinished:{
@@ -127,7 +135,7 @@ MainView {
 
     Component.onCompleted:
     {
-        DB.initializeDatabase()
+        DBCore.initializeDatabase()
         console.log("UBCrypto started")
     }
 }

@@ -103,6 +103,8 @@ Page {
                     total_value: modelData.total_value
                     coinImage: modelData.image_url
                     recordId: modelData.id   // Make sure you pass this from your DB!
+                    delta:modelData.delta
+                    delta_percentage:modelData.delta_percent
                     onEditRequested: {
                         console.log("Edit requested for record:", recordId)
                         addCoinDialog.editMode = true;

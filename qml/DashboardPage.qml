@@ -8,9 +8,9 @@ import QtQuick.Layouts 1.3 // Ensure this is imported if you're using Layouts el
 Page {
     id: dashboardPage
 
-    header: PageHeader {
+  /*  header: PageHeader {
         title: "Market Overview"
-    }
+    }*/
 
     ListModel {
         id: coinModel
@@ -110,7 +110,7 @@ Page {
         // ─── Filter NavBar ───
         Rectangle {
             id: navBar
-            height: units.gu(5)
+            height: units.gu(8)
             width: parent.width
             color: "#1c1c1e"
             border.color: "#333"
@@ -147,7 +147,7 @@ Page {
                             Text {
                                 text: modelData.name
                                 anchors.centerIn: parent
-                                font.pixelSize: units.gu(2)
+                                font.pixelSize: units.gu(2.2)
                                 color: navBar.selectedMenuItem === index ? LomiriColors.orange : "#f0f0f0"
                             }
                         }

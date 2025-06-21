@@ -85,7 +85,7 @@ Page {
             Text {
                 text: "Source Code : https://github.com/karthagokul/ubcrypto"
                 font.pixelSize: units.gu(1.6)
-                color: LomiriColors.accent // Use an accent color for links
+                color: "#222"
                 textFormat: Text.RichText
                 MouseArea {
                     anchors.fill: parent
