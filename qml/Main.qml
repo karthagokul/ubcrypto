@@ -118,6 +118,13 @@ MainView {
         AboutPage {}
     }
 
+    SplashScreen{
+        id:splash
+        onFinished:{
+            splash.visible=false
+        }
+    }
+
     Component.onCompleted:
     {
         DB.initializeDatabase()

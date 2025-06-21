@@ -88,7 +88,7 @@ Page {
                   width: parent.width
             }*/
 
-            ListView {
+            LomiriListView {
                 id: holdingsList
                 width: parent.width
                 height: units.gu(60)
