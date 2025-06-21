@@ -61,7 +61,7 @@ MainView {
                         name: "PORTFOLIO"
                     },
                     {
-                        name: "ABOUT"
+                        name: "NEWS"
                     }
                 ]
 
@@ -97,8 +97,8 @@ MainView {
         if (index === 1)
             return portfolioPage;
         if (index === 2)
-            return aboutPage;
-        return aboutPage;
+            return newsPage;
+        return dashboardPage;
     }
 
     Component {
@@ -113,11 +113,14 @@ MainView {
         id: settingsPage
         SettingsPage {}
     }
-    Component {
+    /*Component {
         id: aboutPage
         AboutPage {}
+    }*/
+    Component {
+            id: newsPage
+            NewsPage {}
     }
-
     SplashScreen{
         id:splash
         onFinished:{
