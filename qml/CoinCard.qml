@@ -97,7 +97,7 @@ Rectangle {
                 font.pixelSize: units.gu(2)
                 font.bold: true
                 color: "#000"
-                horizontalAlignment: Text.AlignRight // Align text right
+                horizontalAlignment: Text.AlignHCenter // Align text right
             }
 
             ChangeStats {

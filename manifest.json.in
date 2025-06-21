@@ -10,7 +10,7 @@
              "urls": "@URLS_FILE@"
         }
     },
-    "version": "1.0.1",
+    "version": "1.0.2",
     "maintainer": "Gokul Kartha <kartha.gokul@gmail.com>",
     "framework" : "@CLICK_FRAMEWORK@"
 }
