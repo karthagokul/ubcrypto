@@ -1,123 +1,12 @@
 .import QtQuick.LocalStorage 2.7 as Sql
-
-var DB_NAME = "ubcrypto"
-var DB_VERSION = "1.0"
-var DB_DISPLAY_NAME = "UBCrypto Portfolio DB"
-var DB_SIZE = 100000
-
-function getDb() {
-    return Sql.LocalStorage.openDatabaseSync(DB_NAME, DB_VERSION, DB_DISPLAY_NAME, DB_SIZE)
-}
-
-function initializeDatabase() {
-    var db = getDb();
-
-    function createOrUpdateTable(label, createSQL, matchColumnList) {
-        try {
-            db.transaction(function (tx) {
-                tx.executeSql(createSQL);
-                console.log("✅ Created table: " + label);
-
-                var info = tx.executeSql('PRAGMA table_info(' + label + ')');
-                var existingCols = [];
-                for (var i = 0; i < info.rows.length; i++) {
-                    existingCols.push(info.rows.item(i).name);
-                }
-
-                for (var j = 0; j < matchColumnList.length; j++) {
-                    var colName = matchColumnList[j].split(' ')[0];
-                    if (!existingCols.includes(colName)) {
-                        tx.executeSql(`ALTER TABLE ${label} ADD COLUMN ${matchColumnList[j]}`);
-                        console.log("➕ Added column: " + matchColumnList[j] + " to " + label);
-                    }
-                }
-            });
-        } catch (e) {
-            console.log("❌ Failed to create or update " + label + ": " + e);
-        }
-    }
-
-    // Portfolios Table
-    createOrUpdateTable("portfolios",
-        `CREATE TABLE IF NOT EXISTS portfolios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE
-        )`,
-        ['id INTEGER', 'name TEXT']
-    );
-
-    // Holdings Table
-    createOrUpdateTable("holdings",
-        `CREATE TABLE IF NOT EXISTS holdings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            portfolio_id INTEGER,
-            coin_symbol TEXT,
-            amount REAL
-        )`,
-        [
-            'id INTEGER',
-            'portfolio_id INTEGER',
-            'coin_symbol TEXT',
-            'amount REAL',
-            'note TEXT',
-            'total_purchase_value REAL',      // Or replace with average_buy_price
-            'average_buy_price REAL',
-            'last_purchase_date TEXT'
-        ]
-    );
-
-
-    // Coins Table
-    createOrUpdateTable("coins",
-        `CREATE TABLE IF NOT EXISTS coins (
-            id TEXT PRIMARY KEY,
-            symbol TEXT UNIQUE,
-            name TEXT,
-            image_url TEXT,
-            current_price REAL,
-            market_cap REAL,
-            market_cap_rank INTEGER,
-            total_volume REAL,
-            high_24h REAL,
-            low_24h REAL,
-            price_change_24h REAL,
-            price_change_percentage_1h REAL,
-            price_change_percentage_24h REAL,
-            price_change_percentage_7d REAL,
-            price_change_percentage_30d REAL,
-            ath REAL,
-            atl REAL,
-            last_updated TEXT,
-            json TEXT
-        )`,
-        ['id TEXT', 'symbol TEXT', 'name TEXT', 'image_url TEXT', 'current_price REAL', 'market_cap REAL',
-         'market_cap_rank INTEGER', 'total_volume REAL', 'high_24h REAL', 'low_24h REAL',
-         'price_change_24h REAL', 'price_change_percentage_1h REAL', 'price_change_percentage_24h REAL',
-         'price_change_percentage_7d REAL', 'price_change_percentage_30d REAL', 'ath REAL', 'atl REAL',
-         'last_updated TEXT', 'json TEXT']
-    );
-
-    // Portfolio History Table
-    createOrUpdateTable("portfolio_history",
-        `CREATE TABLE IF NOT EXISTS portfolio_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            portfolio_id INTEGER,
-            date TEXT,
-            total_value REAL,
-            UNIQUE(portfolio_id, date)
-        )`,
-        ['id INTEGER', 'portfolio_id INTEGER', 'date TEXT', 'total_value REAL']
-    );
-
-    console.log("[DB] ✅ Database initialized with all required tables and fields");
-}
+.import "db_core.js" as DBCore
 
 
 // Create and fetch all portfolios
 function getPortfolios() {
     var list = []
     try {
-        var db = getDb()
+        var db = DBCore.getDb()
         db.transaction(function (tx) {
             var rs = tx.executeSql("SELECT * FROM portfolios ORDER BY id DESC")
             for (var i = 0; i < rs.rows.length; ++i) {
@@ -133,7 +22,7 @@ function getPortfolios() {
 function getAllCoins() {
     var coins = []
     try {
-        var db = getDb()
+        var db = DBCore.getDb()
         db.transaction(function (tx) {
             var rs = tx.executeSql("SELECT * FROM coins ORDER BY market_cap DESC")
             for (var i = 0; i < rs.rows.length; ++i) {
@@ -150,7 +39,7 @@ function getAllCoins() {
 
 function addPortfolio(name) {
     try {
-        var db = getDb()
+        var db = DBCore.getDb()
         db.transaction(function (tx) {
             tx.executeSql("INSERT INTO portfolios (name) VALUES (?)", [name])
         })
@@ -161,7 +50,7 @@ function addPortfolio(name) {
 
 function deletePortfolio(id) {
     try {
-        var db = getDb()
+        var db = DBCore.getDb()
         db.transaction(function (tx) {
             tx.executeSql("DELETE FROM holdings WHERE portfolio_id = ?", [id])
             tx.executeSql("DELETE FROM portfolios WHERE id = ?", [id])
@@ -172,7 +61,7 @@ function deletePortfolio(id) {
 }
 function addHolding(portfolioId, coinSymbol, amount, overwrite = false) {
     try {
-        var db = getDb();
+        var db = DBCore.getDb()
         db.transaction(function (tx) {
             coinSymbol = coinSymbol.toUpperCase();
 
@@ -219,11 +108,10 @@ function addHolding(portfolioId, coinSymbol, amount, overwrite = false) {
         console.log("DB Error in addHolding: " + e);
     }
 }
-
 function getHoldings(portfolioId) {
     var list = []
     try {
-        var db = getDb()
+        var db = DBCore.getDb()
         db.transaction(function (tx) {
             var rs = tx.executeSql("SELECT * FROM holdings WHERE portfolio_id = ?", [portfolioId])
             for (var i = 0; i < rs.rows.length; ++i) {
@@ -261,50 +149,53 @@ function getHoldings(portfolioId) {
 
                     total_value = current_price * amount
                     change_24h = (change_24h_raw >= 0 ? "+" : "") + change_24h_raw.toFixed(2) + "%"
-                }
 
-                // Now backfill only if necessary
-                if (total_purchase_value === null || total_purchase_value === undefined || total_purchase_value === 0) {
-                    total_purchase_value = total_value
-                    tx.executeSql("UPDATE holdings SET total_purchase_value = ? WHERE id = ?", [total_purchase_value, row.id])
-                    console.log("📦 Backfilled purchase value for", symbol, "→", total_purchase_value.toFixed(2))
-                }
+                    // Backfill purchase value if missing
+                    if (total_purchase_value === null || total_purchase_value === undefined || total_purchase_value === 0) {
+                        total_purchase_value = total_value
+                        tx.executeSql("UPDATE holdings SET total_purchase_value = ? WHERE id = ?", [total_purchase_value, row.id])
+                        console.log("📦 Backfilled purchase value for", symbol, "→", total_purchase_value.toFixed(2))
+                    }
 
-                // Calculate delta
-                delta = total_value - total_purchase_value
-                if (total_purchase_value > 0) {
-                    delta_percent = (delta / total_purchase_value) * 100
-                }
+                    // Calculate delta and percent
+                    delta = total_value - total_purchase_value
+                    if (total_purchase_value > 0) {
+                        delta_percent = (delta / total_purchase_value) * 100
+                    }
 
-                list.push({
-                    id: metaRow.id,
-                    coin_symbol: symbol,
-                    coin_name: name,
-                    image_url: image_url,
-                    amount: amount,
-                    current_price: current_price.toFixed(2),
-                    total_value: total_value.toFixed(2),
-                    total_purchase_value: total_purchase_value.toFixed(2),
-                    delta: delta.toFixed(2),
-                    delta_percent: delta_percent.toFixed(2),
-                    change_24h: change_24h,
-                    price_change_percentage_1h: change_1h,
-                    price_change_percentage_24h: change_24h_raw,
-                    price_change_percentage_7d: change_7d,
-                    price_change_percentage_30d: change_30d,
-                    market_cap_rank: market_cap_rank
-                })
+                    list.push({
+                        id: metaRow.id,
+                        coin_symbol: symbol,
+                        coin_name: name,
+                        image_url: image_url,
+                        amount: amount,
+                        current_price: current_price.toFixed(2),
+                        total_value: total_value.toFixed(2),
+                        total_purchase_value: total_purchase_value.toFixed(2),
+                        delta: delta.toFixed(2),
+                        delta_percent: delta_percent.toFixed(2),
+                        change_24h: change_24h,
+                        price_change_percentage_1h: change_1h,
+                        price_change_percentage_24h: change_24h_raw,
+                        price_change_percentage_7d: change_7d,
+                        price_change_percentage_30d: change_30d,
+                        market_cap_rank: market_cap_rank
+                    })
+                } else {
+                    console.log("⚠️ Coin metadata not found for symbol:", symbol)
+                }
             }
         })
     } catch (e) {
         console.log("DB Error in getHoldings: " + e)
     }
+   // console.log("📊 Final holdings list:", JSON.stringify(list, null, 2))
     return list
 }
 
 
 function getTopGainers() {
-    var db = getDb()
+    var db = DBCore.getDb()
     var result = [];
 
     db.transaction(function(tx) {
@@ -324,7 +215,7 @@ function getTopGainers() {
 }
 
 function getTopLosers() {
-    var db = getDb()
+    var db = DBCore.getDb()
     var result = [];
 
     db.transaction(function(tx) {
@@ -345,7 +236,7 @@ function getTopLosers() {
 
 
 function getPortfolioHistory(portfolioId) {
-    var db = getDb()
+    var db = DBCore.getDb()
     var results = [];
 
     db.readTransaction(function (tx) {
@@ -370,7 +261,7 @@ function getPortfolioHistory(portfolioId) {
 
 
 function deleteHolding(portfolioId, coinSymbol) {
-    var db = getDb()
+    var db = DBCore.getDb()
     try {
         db.transaction(function(tx) {
             tx.executeSql(

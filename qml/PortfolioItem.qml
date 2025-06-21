@@ -15,6 +15,8 @@ ListItem {
     property string total_value: ""
     property url coinImage: ""
     property real quantity: 0
+    property string delta
+    property string delta_percentage
     property string recordId
 
     signal editRequested(string recordId)
@@ -97,6 +99,15 @@ ListItem {
                 }
 
                 PriceWidget {
+                    text: "Profit/Loss: " + Number(delta).toFixed(2) + "$"
+                    value:Number(delta).toFixed(2)
+                    font.bold: false
+                    font.pixelSize: units.gu(1.5)
+                    color: Number(delta) < -1 ? "red" : "#2e7d32"  // red for loss, green for profit
+                    horizontalAlignment: Text.AlignRight
+                }
+
+                PriceWidget {
                     text: "Unit: $" + Number(price).toFixed(2)
                     font.bold:false
                     font.pixelSize: units.gu(2)
@@ -105,7 +116,7 @@ ListItem {
                 }
 
                 PriceWidget {
-                    text: "Total: $" + Number(total_value).toFixed(2)
+                    text: "Current Value : $" + Number(total_value).toFixed(2)
                     font.bold:false
                     font.pixelSize: units.gu(2)
                     color: "#333"
