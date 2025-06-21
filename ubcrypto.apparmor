@@ -1,4 +1,10 @@
 {
-    "policy_groups": [],
+    "policy_groups": [
+        "location",
+        "networking",
+        "connectivity",
+        "webview",
+        "content_exchange"
+    ],
     "policy_version": 20.04
 }

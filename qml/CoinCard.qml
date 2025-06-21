@@ -1,74 +1,121 @@
-// qml/components/CoinCard.qml
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import QtQuick.Layouts 1.3 // Import for RowLayout and Layout.fillWidth
 
 Rectangle {
     id: coinCard
-    width: parent.width
-    height: units.gu(10)
-    color: "white"
-    border.color: "#ccc"
-    radius: 8
-    anchors.margins: units.gu(0.5)
+    width: parent.width // CoinCard takes the full width of its parent (e.g., the Column in Dashboard)
+    anchors.margins: units.gu(0.5) // Margin around the whole card
 
+    // Properties... (keep all your properties as they are)
     property string coinName: ""
     property string coinSymbol: ""
-    property string price: ""
-    property string change24h: ""
+    property real currentPrice: 0
+    property real change24h: 0
+    property real change7d: 0
+    property int marketCapRank: -1
+    property real totalVolume: 0
     property url coinImage: ""
 
-    Row {
-        anchors.fill: parent
-        anchors.margins: units.gu(1)
-        spacing: units.gu(2)
+    property real price_change_percentage_1h: 0
+    property real price_change_percentage_24h: 0
+    property real price_change_percentage_7d: 0
+    property real price_change_percentage_30d: 0
 
-        // Coin icon
-        Image {
-            source: coinImage
-            width: units.gu(4)
-            height: units.gu(4)
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            visible: coinImage !== ""
+    // Use Layout.implicitHeight for contentRow wrapped by RowLayout
+    implicitHeight: contentLayout.implicitHeight + units.gu(2) // Adding padding for top/bottom
+
+    // Use RowLayout for the main horizontal arrangement
+    RowLayout { // Replaced the outer Row with RowLayout
+        id: contentLayout // Renamed from contentRow for clarity with Layouts
+        width: parent.width // Fills the width of coinCard
+        anchors.margins: units.gu(1) // Padding inside the card
+
+        // ─── Coin Icon ───
+        Rectangle {
+            width: units.gu(6)
+            height: units.gu(6)
+            Layout.preferredWidth: width // Tell Layout to use this width
+            Layout.preferredHeight: height // Tell Layout to use this height
+            color: "transparent"
+            radius: 6
+            border.color: "#ddd"
+
+            Image {
+                anchors.centerIn: parent
+                source: coinImage
+                width: parent.width * 0.8
+                height: parent.height * 0.8
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                cache:true
+            }
         }
 
-        // Name + Symbol
+        // ─── Coin Name + Symbol (This will take up remaining space) ───
         Column {
-            width: parent.width * 0.4
-            spacing: units.gu(0.3)
+            Layout.fillWidth: true // This column will take all available horizontal space
+            Layout.alignment: Qt.AlignVCenter // Vertically center within the row
+            spacing: 0
 
             Text {
                 text: coinName
+                width:parent.width
                 font.pixelSize: units.gu(2.5)
                 font.bold: true
                 color: "#222"
-                elide: Text.ElideRight
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                // elide: Text.ElideRight // Consider elide if name can be very long
+                // No explicit width, Layout.fillWidth on parent Column handles it
             }
 
             Text {
-                text: coinSymbol
-                font.pixelSize: units.gu(2.2)
-                color: "#666"
+                text: coinSymbol.toUpperCase() + " #" + marketCapRank
+                font.pixelSize: units.gu(1.6)
+                color: "#444444"
             }
         }
 
-        // Price + Change
+        // ─── Price + Change Stats ───
         Column {
-            width: parent.width * 0.5
-            spacing: units.gu(0.3)
+            // Option 1: Fixed width for the price column (e.g., 50% of the main card's width)
+            // This is often easier for responsive design than trying to target "screen width" directly.
+            width: coinCard.width * 0.45 // Example: Make it 45% of the CoinCard's width
+            Layout.preferredWidth: width // Tell Layout to use this width
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter // Align to right and center vertically
+            spacing: units.gu(0.5) // Reduced spacing for better vertical compactness
 
-            Text {
-                text: "$" + price
-                font.pixelSize: units.gu(2.4)
-                horizontalAlignment: Text.AlignRight
+            // Option 2: If you REALLY want 50% of the *screen* width, and coinCard is full width,
+            // then `width: coinCard.width * 0.5` is correct. If `coinCard` is not full width,
+            // you'd need to access `Screen.width` or `ApplicationWindow.width` and calculate.
+            // For now, `coinCard.width * 0.45` is robust as `coinCard` is `width: parent.width`.
+
+
+            PriceWidget {
+                value: currentPrice
+                font.pixelSize: units.gu(2)
+                font.bold: true
+                color: "#000"
+                horizontalAlignment: Text.AlignRight // Align text right
             }
 
-            Text {
-                text: change24h
-                font.pixelSize: units.gu(2.2)
-                color: change24h.startsWith("+") ? "green" : "red"
-                horizontalAlignment: Text.AlignRight
+            ChangeStats {
+                width: parent.width // Takes full width of this column
+                change1h: price_change_percentage_1h
+                change24h: price_change_percentage_24h
+                change7d: price_change_percentage_7d
+                change30d: price_change_percentage_30d
             }
         }
+    }
+
+    // Stylish Bottom Separator
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 1
+        color: "#e0e0e0"
     }
 }

@@ -1,11 +1,30 @@
 // qml/Main.qml
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import io.thp.pyotherside 1.4
+import "datastore.js" as DB
 
 MainView {
     id: mainView
-    applicationName: "UBCrypto"
+    applicationName: "ubcrypto"
     property int selectedTab: 0
+
+    Python {
+        id: python
+
+        Component.onCompleted: {
+            addImportPath(Qt.resolvedUrl("../src/"));
+            importModule("cli", function () {
+                python.call("cli.start_background_sync",  function (result) {
+                    console.log("Started")
+                });
+            });
+        }
+
+        onError: function (errorName, errorMessage, traceback) {
+            console.log("Python Error:", errorName, errorMessage, traceback);
+        }
+    }
 
     // Loader section (main content)
     Loader {
@@ -21,14 +40,13 @@ MainView {
     Rectangle {
         id: navBar
         anchors.left: parent.left
-        anchors.leftMargin: units.gu(1)
-        anchors.rightMargin: units.gu(1)
+        //anchors.leftMargin: units.gu(1)
+        //anchors.rightMargin: units.gu(1)
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: units.gu(7)
-        color: "#f5f5f5"
-        border.color: "#ccc"
-
+        color: "#1c1c1e" // Deep charcoal black (used in macOS/iOS dark mode)
+        border.color: "#333" // Subtle border for separation
         Row {
             anchors.centerIn: parent
             anchors.left: navBar.left
@@ -37,21 +55,18 @@ MainView {
             Repeater {
                 model: [
                     {
-                        name: "Dashboard"
+                        name: "DASHBOARD"
                     },
                     {
-                        name: "Portfolio"
+                        name: "PORTFOLIO"
                     },
                     {
-                        name: "Settings"
-                    },
-                    {
-                        name: "About"
+                        name: "ABOUT"
                     }
                 ]
 
                 delegate: MouseArea {
-                    width: units.gu(10)
+                    width: units.gu(14)
                     height: navBar.height
                     onClicked: {
                         selectedTab = index;
@@ -65,9 +80,9 @@ MainView {
                         Text {
                             text: modelData.name
                             anchors.centerIn: parent
-                            font.pixelSize: units.gu(1.8)
-                            font.bold: selectedTab === index
-                            color: selectedTab === index ? LomiriColors.orange : "#444"
+                            font.pixelSize: units.gu(2)
+                            font.bold: true
+                            color: selectedTab === index ? LomiriColors.orange : "#f0f0f0"
                         }
                     }
                 }
@@ -82,7 +97,7 @@ MainView {
         if (index === 1)
             return portfolioPage;
         if (index === 2)
-            return settingsPage;
+            return aboutPage;
         return aboutPage;
     }
 
@@ -103,5 +118,9 @@ MainView {
         AboutPage {}
     }
 
-    Component.onCompleted: console.log("UBCrypto started")
+    Component.onCompleted:
+    {
+        DB.initializeDatabase()
+        console.log("UBCrypto started")
+    }
 }

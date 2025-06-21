@@ -10,11 +10,13 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 set(QT_IMPORTS_DIR "lib/${ARCH_TRIPLET}")
+set(URLS_FILE "ubcrypto.url-dispatcher")
 
 set(PROJECT_NAME "ubcrypto")
-set(FULL_PROJECT_NAME "ubcrypto.gokul")
+set(FULL_PROJECT_NAME "ubcrypto")
 set(DATA_DIR /)
 set(DESKTOP_FILE_NAME ${PROJECT_NAME}.desktop)
+set(URLS_DIR ${DATA_DIR})
 
 # This command figures out the minimum SDK framework for use in the manifest
 # file via the environment variable provided by Clickable or sets a default value otherwise.
@@ -63,6 +65,7 @@ add_custom_target(${DESKTOP_FILE_NAME} ALL
     COMMAND sed -i 's/${PROJECT_NAME}-//g' ${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE_NAME}
 )
 
+install(FILES ${URLS_FILE} DESTINATION ${URLS_DIR})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE_NAME} DESTINATION ${DATA_DIR})
 
 add_subdirectory(po)

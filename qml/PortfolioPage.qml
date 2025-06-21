@@ -9,11 +9,34 @@ Page {
 
     header: PageHeader {
         title: "Portfolio"
+        ActionBar {
+            numberOfSlots: 2
+            anchors.right: parent.right
+            actions: [
+                Action {
+                    iconName: "add"
+                    text: "Portfolio"
+                    onTriggered: newPortfolioDialog.open()
+                },
+                Action {
+                    iconName: "delete"
+                    text: "Portfolio"
+                    onTriggered: {
+                        if (selectedPortfolio !== -1) {
+                            DB.deletePortfolio(selectedPortfolio)
+                            reloadPortfolios()
+                        }
+                    }
+                }
+
+            ]
+        }
     }
 
     Flickable {
         id: flick
         anchors.fill: parent
+        anchors.margins: units.gu(1)
         contentHeight: contentColumn.implicitHeight
         clip: true
 
@@ -21,174 +44,153 @@ Page {
             id: contentColumn
             width: parent.width
             spacing: units.gu(2)
-            anchors.margins: units.gu(2)
 
-            // === Portfolio selector ===
-            ComboBox {
-                id: portfolioSelector
-                model: portfolioNames
-                onCurrentIndexChanged: {
-                    selectedPortfolio = portfolioIds[currentIndex]
-                    loadHoldingsForPortfolio(selectedPortfolio)
-                }
-            }
-
-            // === Action buttons ===
+            // === Top row with Combo + Buttons ===
+            // === Top row with Combo + Total ===
             Row {
-                spacing: units.gu(2)
-
-                Button {
-                    text: "➕ New Portfolio"
-                    onClicked: newPortfolioDialog.open()
-                }
-
-                Button {
-                    text: "➕ Add Coin"
-                    enabled: selectedPortfolio !== -1
-                    onClicked: addCoinDialog.open()
-                }
-
-                Button {
-                    text: "🗑 Delete Portfolio"
-                    enabled: selectedPortfolio !== -1
-                    onClicked: {
-                        DB.deletePortfolio(selectedPortfolio)
-                        reloadPortfolios()
-                    }
-                }
-            }
-
-            // === Holdings List ===
-            Text {
-                text: "Your Holdings"
-                font.bold: true
-                font.pointSize: 10
-            }
-
-            Column {
-                id: contentCol
-                width: parent.width
+                id: topRow
                 spacing: units.gu(1)
+                width: parent.width
 
-                Repeater {
-                    model: holdingsModel
-                    delegate: PortfolioItem {
-                        coinName: modelData.coin_symbol
-                        coinSymbol: modelData.coin_symbol
-                        quantity: modelData.amount
-                        currentPrice: "" // TODO: link with live data
-                    }
-                }
-            }
-        }
-    }
-
-    // === Dialog: Create Portfolio ===
-    Dialog {
-        id: newPortfolioDialog
-        modal: true
-        focus: true
-        title: "Create New Portfolio"
-
-        Column {
-            spacing: units.gu(1)
-            padding: units.gu(1)
-
-            TextField {
-                id: newPortfolioName
-                placeholderText: "Enter portfolio name"
-            }
-
-            Row {
-                spacing: units.gu(2)
-                Button {
-                    text: "Create"
-                    onClicked: {
-                        if (newPortfolioName.text.length > 0) {
-                            DB.addPortfolio(newPortfolioName.text)
-                            newPortfolioName.text = ""
-                            newPortfolioDialog.close()
-                            reloadPortfolios()
+                ComboBox {
+                    id: portfolioSelector
+                    width: parent.width * 0.4
+                    model: portfolioNames
+                    onCurrentIndexChanged: {
+                        if (currentIndex >= 0 && currentIndex < portfolioIds.length) {
+                            selectedPortfolio = portfolioIds[currentIndex];
+                            loadHoldingsForPortfolio(selectedPortfolio);
+                        } else {
+                            selectedPortfolio = -1;
+                            holdingsModel = [];
                         }
                     }
                 }
                 Button {
-                    text: "Cancel"
-                    onClicked: newPortfolioDialog.close()
+                    text: "Add Coin"
+                    enabled: (selectedPortfolio !== -1)
+                    onClicked: {
+                        addCoinDialog.open()
+                    }
                 }
             }
+
+            // === Holdings Header ===
+            Text {
+                text: "Your Holdings" + " Worth ($" + totalValue.toFixed(2)+")"
+                font.bold: true
+                font.pixelSize: units.gu(2.2)
+            }
+
+            /*  PortfolioChart{
+                id: historyChart
+                  height: units.gu(30)
+                  width: parent.width
+            }*/
+
+            ListView {
+                id: holdingsList
+                width: parent.width
+                height: units.gu(60)
+                spacing: units.gu(1)
+                model: holdingsModel
+
+                delegate: PortfolioItem {
+                    coinName: modelData.coin_name
+                    coinSymbol: modelData.coin_symbol
+                    quantity: modelData.amount
+                    price: modelData.current_price
+                    total_value: modelData.total_value
+                    coinImage: modelData.image_url
+                    recordId: modelData.id   // Make sure you pass this from your DB!
+                    onEditRequested: {
+                        console.log("Edit requested for record:", recordId)
+                        addCoinDialog.editMode = true;
+                        addCoinDialog.editingSymbol = modelData.coin_symbol;
+                        addCoinDialog.symbolField.text = modelData.coin_symbol;
+                        addCoinDialog.amountField.text = modelData.amount.toString();
+                        addCoinDialog.open();
+                    }
+
+                    onDeleteRequested: {
+                        if (selectedPortfolio !== -1) {
+                            DB.deleteHolding(selectedPortfolio, coinSymbol);
+                            loadHoldingsForPortfolio(selectedPortfolio);
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    // === Dialog: New Portfolio ===
+    NewPortfolioDialog {
+        id: newPortfolioDialog
+        onPortfolioCreated: {
+            console.log("Saving " + name);
+            DB.addPortfolio(name);
+            reloadPortfolios();
         }
     }
 
     // === Dialog: Add Coin ===
-    Dialog {
+    AddCoinDialog {
         id: addCoinDialog
-        modal: true
-        focus: true
-        title: "Add Coin to Portfolio"
 
-        Column {
-            spacing: units.gu(1)
-            padding: units.gu(1)
-
-            TextField {
-                id: coinSymbolField
-                placeholderText: "Coin Symbol (e.g. BTC)"
+        onCoinAdded: {
+            if (selectedPortfolio !== -1) {
+                DB.addHolding(selectedPortfolio, symbol, amount);
+                loadHoldingsForPortfolio(selectedPortfolio);
             }
+        }
 
-            TextField {
-                id: coinAmountField
-                placeholderText: "Amount (e.g. 2.5)"
-                inputMethodHints: Qt.ImhFormattedNumbersOnly
-            }
-
-            Row {
-                spacing: units.gu(2)
-
-                Button {
-                    text: "Add"
-                    onClicked: {
-                        if (selectedPortfolio !== -1 && coinSymbolField.text && coinAmountField.text) {
-                            DB.addHolding(selectedPortfolio, coinSymbolField.text, parseFloat(coinAmountField.text))
-                            coinSymbolField.text = ""
-                            coinAmountField.text = ""
-                            addCoinDialog.close()
-                            loadHoldingsForPortfolio(selectedPortfolio)
-                        }
-                    }
-                }
-
-                Button {
-                    text: "Cancel"
-                    onClicked: addCoinDialog.close()
-                }
+        onCoinEdited: {
+            if (selectedPortfolio !== -1) {
+                DB.addHolding(selectedPortfolio, symbol, amount,true);
+                loadHoldingsForPortfolio(selectedPortfolio);
             }
         }
     }
+
 
     // === Properties ===
     property var portfolioNames: []
     property var portfolioIds: []
     property int selectedPortfolio: -1
     property var holdingsModel: []
+    property real totalValue: 0.0
 
-    // === Functions ===
+    // === Logic ===
     Component.onCompleted: reloadPortfolios()
 
     function reloadPortfolios() {
-        var portfolios = DB.getPortfolios()
-        portfolioNames = portfolios.map(p => p.name)
-        portfolioIds = portfolios.map(p => p.id)
+        var portfolios = DB.getPortfolios();
+        portfolioNames = portfolios.map(p => p.name);
+        portfolioIds = portfolios.map(p => p.id);
         if (portfolioIds.length > 0) {
-            selectedPortfolio = portfolioIds[0]
-            portfolioSelector.currentIndex = 0
-            loadHoldingsForPortfolio(selectedPortfolio)
+            selectedPortfolio = portfolioIds[0];
+            portfolioSelector.currentIndex = 0;
+            loadHoldingsForPortfolio(selectedPortfolio);
+
         } else {
-            holdingsModel = []
+            holdingsModel = [];
         }
     }
 
     function loadHoldingsForPortfolio(portfolioId) {
-        holdingsModel = DB.getHoldings(portfolioId)
+        var holdings = DB.getHoldings(portfolioId);
+        holdingsModel = holdings;
+
+        // Compute total value from holdings
+        var total = 0.0;
+        for (var i = 0; i < holdings.length; i++) {
+            var val = parseFloat(holdings[i].total_value);
+            if (!isNaN(val)) {
+                total += val;
+            }
+        }
+        totalValue = total;
     }
+
 }
