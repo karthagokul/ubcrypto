@@ -64,7 +64,7 @@ ListItem {
                     Text {
                         text: coinName
                         font.pixelSize: units.gu(2.2)
-                        font.bold: true
+                        //font.bold: true
                         color: "#222"
                         elide: Text.ElideRight
                         wrapMode: Text.WordWrap
@@ -98,6 +98,7 @@ ListItem {
 
                 PriceWidget {
                     text: "Unit: $" + Number(price).toFixed(2)
+                    font.bold:false
                     font.pixelSize: units.gu(2)
                     color: "#333"
                     horizontalAlignment: Text.AlignRight
@@ -105,6 +106,7 @@ ListItem {
 
                 PriceWidget {
                     text: "Total: $" + Number(total_value).toFixed(2)
+                    font.bold:false
                     font.pixelSize: units.gu(2)
                     color: "#333"
                     horizontalAlignment: Text.AlignRight

@@ -4,7 +4,6 @@ import QtQuick.Layouts 1.3 // Import for RowLayout and Layout.fillWidth
 
 ListItem {
     id: coinCard
-    width: parent.width // CoinCard takes the full width of its parent (e.g., the Column in Dashboard)
     anchors.margins: units.gu(0.5) // Margin around the whole card
 
     // Properties... (keep all your properties as they are)
@@ -74,7 +73,7 @@ ListItem {
                 text: coinName
                 width:parent.width
                 font.pixelSize: units.gu(2.5)
-                font.bold: true
+                //font.bold: true
                 color: "#222"
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
@@ -113,7 +112,7 @@ ListItem {
             PriceWidget {
                 value: currentPrice
                 font.pixelSize: units.gu(2)
-                font.bold: true
+                font.bold: false
                 color: "#000"
                 horizontalAlignment: Text.AlignHCenter // Align text right
             }

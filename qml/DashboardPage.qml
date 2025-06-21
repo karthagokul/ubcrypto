@@ -18,12 +18,11 @@ Page {
     property string currentFilter: "all"
 
     Component.onCompleted: {
-        var coins = DB.getAllCoins();
-        //console.log("Loaded coins:", JSON.stringify(coins));
-        loadCoins(coins);
+        loadCoins();
     }
 
-    function loadCoins(dataArray) {
+    function loadCoins() {
+        var dataArray = DB.getAllCoins();
         coinModel.clear();
 
         for (var i = 0; i < dataArray.length; i++) {
@@ -31,17 +30,17 @@ Page {
 
             // Append only QML-safe properties
             coinModel.append({
-                name: item.name || "Unknown",
-                symbol: item.symbol || "",
-                current_price: item.current_price || 0,
-                price_change_percentage_1h: item.price_change_percentage_1h || 0,
-                price_change_percentage_24h: item.price_change_percentage_24h || 0,
-                price_change_percentage_7d: item.price_change_percentage_7d || 0,
-                price_change_percentage_30d: item.price_change_percentage_30d || 0,
-                market_cap_rank: item.market_cap_rank || -1,
-                total_volume: item.total_volume || 0,
-                image_url: item.image_url || ""
-            });
+                                 name: item.name || "Unknown",
+                                 symbol: item.symbol || "",
+                                 current_price: item.current_price || 0,
+                                 price_change_percentage_1h: item.price_change_percentage_1h || 0,
+                                 price_change_percentage_24h: item.price_change_percentage_24h || 0,
+                                 price_change_percentage_7d: item.price_change_percentage_7d || 0,
+                                 price_change_percentage_30d: item.price_change_percentage_30d || 0,
+                                 market_cap_rank: item.market_cap_rank || -1,
+                                 total_volume: item.total_volume || 0,
+                                 image_url: item.image_url || ""
+                             });
         }
     }
 
@@ -73,6 +72,34 @@ Page {
         }
     }
 
+    function filterList(query) {
+        if (!query || query.trim() === "") {
+            // If the search box is empty, reload current filter
+            applyFilter(currentFilter);
+            return;
+        }
+
+        // Normalize search query
+        var lowerQuery = query.toLowerCase();
+
+        var filtered = [];
+
+        var allCoins = DB.getAllCoins(); // You could also cache this to avoid repeated DB calls
+
+        for (var i = 0; i < allCoins.length; i++) {
+            var item = allCoins[i];
+            var name = item.name.toLowerCase();
+            var symbol = item.symbol.toLowerCase();
+
+            if (name.indexOf(lowerQuery) !== -1 || symbol.indexOf(lowerQuery) !== -1) {
+                filtered.push(item);
+            }
+        }
+
+        loadCoins(filtered);
+    }
+
+
     // === Main Layout Column ===
     Column {
         anchors.fill: parent
@@ -82,7 +109,7 @@ Page {
         // ─── Filter NavBar ───
         Rectangle {
             id: navBar
-            height: units.gu(7)
+            height: units.gu(5)
             width: parent.width
             color: "#1c1c1e"
             border.color: "#333"
@@ -127,34 +154,62 @@ Page {
                 }
             }
         }
+        Item {
+            width: parent.width
+            height: units.gu(5)
+
+
+            TextField {
+                id: searchBox
+                placeholderText: "Search coins..."
+                anchors.fill: parent
+                font.pixelSize: units.gu(2)
+                onTextChanged: {
+                    console.log("DEBUG: TextField onTextChanged fired. Current text:", searchBox.text);
+                    filterList(searchBox.text);
+                }
+
+                inputMethodHints: Qt.ImhNoPredictiveText
+                rightPadding: clearButton.visible ? units.gu(4) : 0
+            }
+
+            MouseArea {
+                id: clearButtonArea
+                visible: searchBox.text.length > 0
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.right
+                width: units.gu(4)
+                height: parent.height
+                onClicked: {
+                    searchBox.text = ""
+                }
+
+                Label {
+                    id: clearButton
+                    text:"X"
+                    font.bold: true
+                    anchors.centerIn: parent
+                    width: units.gu(2)
+                    height: units.gu(2)
+                    visible: searchBox.text.length > 0
+                }
+            }
+        }
+
+
 
         // ─── List of Coins ───
         LomiriListView {
             id: coinListView
-            // Removed direct anchors.left/right/top/bottom here.
-            // The Column parent (main layout) will manage its vertical position and width.
             width: parent.width // This makes it fill the horizontal space of the Column.
             height: parent.height - navBar.height - spacing * 2 // Calculate remaining height.
-                                                                // Or use Layout.fillHeight if main Column is a ColumnLayout.
-                                                                // If main Column is just a Column, `height: parent.height - navBar.height - ...` is correct.
-
-            // The visibility is now handled by the parent Column, but this item still has its own visible state.
             visible: coinModel.count > 0 // This should be correct. It will show if count > 0.
-                                         // If it was still hidden, there's another subtle issue or a race condition.
-
-            // The Column parent (main layout) will position it below navBar based on its order.
-            // Top/bottom anchors conflict with Column's vertical positioning.
             spacing: units.gu(1) // Spacing between delegates
             clip: true
 
             model: coinModel
 
             delegate: CoinCard {
-                width: parent.width // CoinCard takes full width of the ListView
-                // No explicit height on delegate here, CoinCard manages its own implicitHeight
-                // height: units.gu(10) // If CoinCard calculates its own height, avoid fixing it here.
-                                      // If CoinCard's implicitHeight isn't honored by ListView without it,
-                                      // then uncommenting this is a temporary workaround.
                 coinName: model.name || "N/A"
                 coinSymbol: model.symbol || ""
                 currentPrice: model.current_price !== undefined ? model.current_price : 0
@@ -171,22 +226,9 @@ Page {
         // ─── Empty State ───
         Item {
             id: emptyState
-            // The column will naturally place this after coinListView if coinListView is visible.
-            // If coinListView is visible, this will collapse.
-            // If coinListView is NOT visible (because coinModel.count is 0), then this becomes visible.
-            // The height of emptyState needs to be defined if coinListView is not visible.
             width: parent.width
             height: parent.height - navBar.height - spacing * 2 // Occupy the same vertical space as coinListView
-                                                                // or ensure it has a large enough height
             visible: (coinModel.count === 0) // Correct condition
-
-            // Removed conflicting anchors! The parent Column manages vertical positioning.
-            // anchors.left: coinListView.left (No, parent Column handles horizontal for its children)
-            // anchors.right: coinListView.right (No)
-            // anchors.topMargin: units.gu(1) (No)
-            // anchors.top: coinListView.top (No, conflicts with Column positioner)
-            // anchors.bottom: coinListView.bottom (No)
-
             Column {
                 anchors.centerIn: parent // Center content within the emptyState Item
                 spacing: units.gu(1)
@@ -203,16 +245,9 @@ Page {
                     text: "Refresh"
                     anchors.horizontalCenter: parent.horizontalCenter // Keep centering for the Button
                     onClicked: {
-                        console.log("Calling the Python Sync")
-                        python.call("cli.start_background_sync", function (result) {
-                            console.log("Started background sync. Result:", result)
-                            dashboardPage.applyFilter(dashboardPage.currentFilter)
-                        });
+                       loadCoins();
                     }
                 }
-            }
-            MouseArea { // This MouseArea is good for making the whole empty state clickable for visual feedback
-                anchors.fill: parent
             }
         }
     }
