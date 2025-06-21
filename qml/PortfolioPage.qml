@@ -67,7 +67,8 @@ Page {
                     }
                 }
                 Button {
-                    text: "Add"
+                    text: "Add Coin"
+                    enabled: (selectedPortfolio !== -1)
                     onClicked: {
                         addCoinDialog.open()
                     }
@@ -78,7 +79,7 @@ Page {
             Text {
                 text: "Your Holdings" + " Worth ($" + totalValue.toFixed(2)+")"
                 font.bold: true
-                font.pointSize: 10
+                font.pixelSize: units.gu(2.2)
             }
 
             /*  PortfolioChart{

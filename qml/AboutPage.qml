@@ -1,53 +1,102 @@
 // qml/AboutPage.qml
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import QtQuick.Controls 2.2 // For potential Heading or more styled Text
+import Qt.labs.platform 1.0 as Platform // For opening external links (if available on UT)
 
 Page {
     id: aboutPage
     header: PageHeader {
-        id: header
         title: "About UBCrypto"
     }
 
     Flickable {
-        anchors.top: header.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        contentHeight: contentCol.height
-        anchors.margins: units.gu(2)
+        anchors.fill: parent
+        // Use Flickable's internal anchors for padding, not contentCol's anchors.margins
+        anchors.margins: units.gu(2) // Margins for the entire scrollable area
+        contentHeight: contentCol.implicitHeight // Use implicitHeight for robust sizing
+        clip: true // Ensure content doesn't draw outside bounds
 
         Column {
             id: contentCol
-            width: parent.width
-            spacing: units.gu(1)
-            anchors.margins: units.gu(2)
+            width: parent.width // Column fills the Flickable's width
+            spacing: units.gu(2) // Increased spacing between major sections for better visual separation
 
-            Label {
-                text: "UBCrypto is a lightweight cryptocurrency tracking app designed for Ubuntu Touch."
+            // --- Section: About UBCrypto ---
+            Text {
+                text: "UBCrypto"
+                font.pixelSize: units.gu(3) // Larger font for app name
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                width: parent.width
+            }
+
+            Text {
+                text: "Your essential lightweight cryptocurrency tracking app for Ubuntu Touch. Stay informed with live market data, manage your personal portfolio, and enjoy a clean, intuitive user interface designed for mobile."
+                font.pixelSize: units.gu(1.8)
+                color: "#444" // Darker text for better readability
                 width: parent.width
                 wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
             }
 
-            Label {
-                text: "Features:"
+            Rectangle { width: parent.width; height: 1; color: "#e0e0e0";  } // Subtle separator
+
+
+            // --- Section: Key Features ---
+            Text {
+                text: "Key Features"
+                font.pixelSize: units.gu(2.2) // Heading size
                 font.bold: true
+                color: "#222"
+                width: parent.width
+                horizontalAlignment: Text.AlignLeft // Align left
             }
 
-            Label {
-                text: "\u2022 Live price tracking\n\u2022 Personal portfolio view\n\u2022 Clean UI with offline support\n\u2022 Built with Qt/QML and Python"
+            // Using HTML list for features
+            Text {
+                textFormat: Text.RichText // Enable HTML rendering
+                font.pixelSize: units.gu(1.8)
+                color: "#444"
+                width: parent.width
                 wrapMode: Text.WordWrap
-            }
-            Label {
-                text: "https://github.com/karthagokul/ubcrypto"
-                font.italic: true
-                wrapMode: Text.WordWrap
+                text: "<ul>" + // Unordered list
+                      "<li>Beta Release, Will provide more features such as Portfolio Management in the next releases</li>" +
+                      "<li>Real-time Price Tracking and Market Data</li>" +
+                      "<li>Personalized Portfolio Management (Coming Soon / Future Feature)</li>" +
+                      "<li>Offline Support for Cached Data</li>" +
+                      "<li>Clean &amp; Intuitive User Interface</li>" + // &amp; for '&'
+                      "<li>Built with Python &amp; Qt/QML for a Native Experience</li>" +
+                      "</ul>"
             }
 
-            Label {
-                text: "Version 1.0.0"
-                color: "#888"
+            Rectangle { width: parent.width; height: 1; color: "#e0e0e0"; } // Subtle separator
+
+            // --- Section: Links ---
+            Text {
+                text: "Links"
+                font.pixelSize: units.gu(2)
+                font.bold: true
+                color: "#222"
+                width: parent.width
+                horizontalAlignment: Text.AlignLeft
             }
+
+            Text {
+                text: "Source Code : https://github.com/karthagokul/ubcrypto"
+                font.pixelSize: units.gu(1.6)
+                color: LomiriColors.accent // Use an accent color for links
+                textFormat: Text.RichText
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        Qt.openUrlExternally("https://github.com/karthagokul/ubcrypto");
+                    }
+                }
+            }
+
+            Rectangle { width: parent.width; height: 1; color: "#e0e0e0"; } // Subtle separator
+
         }
     }
 }

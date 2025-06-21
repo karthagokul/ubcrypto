@@ -92,20 +92,20 @@ ListItem {
                 Text {
                     text: "Qty: " + quantity
                     font.pixelSize: units.gu(1.5)
-                    color: "#444"
+                    color: "#333"
                     horizontalAlignment: Text.AlignRight
                 }
 
                 PriceWidget {
                     text: "Unit: $" + Number(price).toFixed(2)
-                    font.pixelSize: units.gu(1.5)
+                    font.pixelSize: units.gu(2)
                     color: "#333"
                     horizontalAlignment: Text.AlignRight
                 }
 
                 PriceWidget {
                     text: "Total: $" + Number(total_value).toFixed(2)
-                    font.pixelSize: units.gu(1.5)
+                    font.pixelSize: units.gu(2)
                     color: "#333"
                     horizontalAlignment: Text.AlignRight
                 }

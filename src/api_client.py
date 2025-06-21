@@ -78,7 +78,7 @@ def get_coins(limit=1000):
     for page in range(1, pages + 1):
         # Construct the URL for the current page
         url = f"{COINGECKO_BASE}/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={per_page}&page={page}&sparkline=false&price_change_percentage=1h,24h,7d,30d,90d"
-        log.debug(f"[API] Fetching page {page}: {url}")
+        #log.debug(f"[API] Fetching page {page}: {url}")
 
         try:
             # Use the requests session for the API call
@@ -86,7 +86,7 @@ def get_coins(limit=1000):
             response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
 
             raw_data = response.content # Get raw bytes
-            log.debug(f"Raw response for page {page}: {raw_data[:200]}...") # Log first 200 bytes
+            #log.debug(f"Raw response for page {page}: {raw_data[:200]}...") # Log first 200 bytes
             data = json.loads(raw_data.decode("utf-8"))
 
             if not isinstance(data, list):
