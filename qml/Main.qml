@@ -50,23 +50,26 @@ MainView {
         Row {
             anchors.centerIn: parent
             anchors.left: navBar.left
-            spacing: units.gu(1)
+            spacing: units.gu(0.5)
 
             Repeater {
                 model: [
                     {
-                        name: "DASHBOARD"
+                        name: "HOME"
                     },
                     {
                         name: "PORTFOLIO"
                     },
                     {
                         name: "NEWS"
+                    },
+                    {
+                        name: "ABOUT"
                     }
                 ]
 
                 delegate: MouseArea {
-                    width: units.gu(14)
+                    width: units.gu(12)
                     height: navBar.height
                     onClicked: {
                         selectedTab = index;
@@ -98,6 +101,8 @@ MainView {
             return portfolioPage;
         if (index === 2)
             return newsPage;
+        if (index === 3)
+            return aboutPage;
         return dashboardPage;
     }
 
@@ -113,10 +118,10 @@ MainView {
         id: settingsPage
         SettingsPage {}
     }
-    /*Component {
+    Component {
         id: aboutPage
         AboutPage {}
-    }*/
+    }
     Component {
             id: newsPage
             NewsPage {}

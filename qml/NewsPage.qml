@@ -2,9 +2,25 @@ import QtQuick 2.7
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3 // For better layout management
 import Qt.labs.platform 1.0 // For Qt.openUrlExternally (if available and needed)
-
+import QtQuick 2.7
+import Lomiri.Components 1.3
+import QtQuick.Controls 2.2
+import io.thp.pyotherside 1.4
 Page {
-    title: "Crypto News"
+    header: PageHeader {
+        title: "Latest News"
+        ActionBar {
+            numberOfSlots: 2
+            anchors.right: parent.right
+            actions: [
+                Action {
+                    iconName: "view-refresh"
+                    text: "Refresh"
+                    onTriggered: loadAllFeeds()
+                }
+            ]
+        }
+    }
 
     // Optional: Define some colors for better aesthetics
     property color backgroundColor: "#f0f2f5"
@@ -155,7 +171,7 @@ Page {
                 color: cardBackgroundColor
                 radius: 8
                 // The implicitHeight of newsCard is correctly derived from its ColumnLayout
-                implicitHeight: newsContentColumn.implicitHeight +  units.gu(10)  // Padding for the card content
+                implicitHeight: newsContentColumn.implicitHeight +  units.gu(8)  // Padding for the card content
 
 
                 ColumnLayout {
@@ -213,29 +229,5 @@ Page {
                 }
             }
         }
-    }
-
-    // Optional: A Button to manually refresh the news
-    Button {
-        id: refreshButton
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 8
-        text: "Refresh News"
-        padding: 10
-        width: parent.width * 0.5 // Half width of the parent
-        font.pixelSize: 16
-        background: Rectangle { // Custom background for styling
-            color: linkColor
-            radius: 5
-        }
-        contentItem: Text { // Custom content item for text color
-            text: parent.text
-            font: parent.font
-            color: "white"
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-        onClicked: loadAllFeeds()
     }
 }
