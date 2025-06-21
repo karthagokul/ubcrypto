@@ -1,6 +1,6 @@
 # UBCrypto
 
-Crypto Portfolio Tracker for Ubuntu Touch
+Crypto Portfolio Tracker for Ubuntu Touch (https://open-store.io/app/ubcrypto)
 
 ## License
 
